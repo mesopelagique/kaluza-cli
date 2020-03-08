@@ -4,6 +4,12 @@
 
 Command line interface for [Kaluza](https://github.com/mesopelagique/Kaluza), inspired by [npm](https://www.npmjs.com/) 
 
+## Install
+
+```bash
+curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
+```
+
 ## Usage
 
 ### Init a project
@@ -32,7 +38,7 @@ kaluza add mesopelagique/formula_compose -D
 
 ## TODO
 
-- [ ] release workflow
+- [X] release workflow
 - [ ] `install` command
 - [ ] better argument parsing (manage order etc...)
 - [ ] doc about version
