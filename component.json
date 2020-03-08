@@ -1,0 +1,6 @@
+{
+  "name" : "kaluza-cli",
+  "dependencies" : [
+    "mesopelagique\/kaluza"
+  ]
+}
