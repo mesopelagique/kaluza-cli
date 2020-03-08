@@ -1,5 +1,7 @@
 # kaluza-cli
 
+[![build][build-shield]][build-url]
+
 Command line interface for [Kaluza](https://github.com/mesopelagique/Kaluza), inspired by [npm](https://www.npmjs.com/) 
 
 ## Usage
@@ -30,7 +32,13 @@ kaluza add mesopelagique/formula_compose -D
 
 ## TODO
 
+- [ ] release workflow
 - [ ] `install` command
 - [ ] better argument parsing (manage order etc...)
 - [ ] doc about version
 - [ ] interactive init like npm
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[build-shield]: https://github.com/mesopelagique/kaluza-cli/workflows/build/badge.svg
+[build-url]: https://github.com/mesopelagique/kaluza-cli/actions?workflow=build
