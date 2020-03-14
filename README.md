@@ -36,10 +36,27 @@ kaluza add mesopelagique/formula_compose -D
 
 > Development dependencies, or devDependencies are components that are consumed by requiring them in files or run as binaries, during the development phase. These are components that are only necessary during development and not necessary for the production build
 
+### Install a dependency
+
+```
+kaluza install mesopelagique/formula_compose
+```
+
+A dependency will be added to your `component.json` if not already added, and the dependency installed into `Components`
+
+Installed mean a binary could be downloaded if available with github release, or if you are in git reporisory a git submodule will be added, and if not, a `git clone` will be done
+
+### Install configured dependencies
+
+```
+kaluza install
+```
+Install all dependencies defined in `component.json`
+
 ## TODO
 
 - [X] release workflow
-- [ ] `install` command
+- [X] `install` command
 - [ ] `uninstall` command
 - [ ] better argument parsing (manage order etc...)
 - [ ] doc about version
