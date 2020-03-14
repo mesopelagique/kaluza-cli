@@ -6,8 +6,20 @@ Command line interface for [Kaluza](https://github.com/mesopelagique/Kaluza), in
 
 ## Install
 
+To install `kaluza`  
+
 ```bash
 curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
+```
+
+This will install `kaluza` to `/usr/local/bin`
+
+### Troubleshooting 
+
+If you are unable to write to `/usr/local/bin` add `sudo`
+
+```bash
+sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
 ```
 
 ## Usage
