@@ -17,22 +17,29 @@ struct AddCommand: Command {
             exit(2)
         }
         let isDev = args.contains("--save-dev") || args.contains("-S")
-        addCommand(path: args[2], dev: isDev)
-    }
-
-    static func addCommand(path: String, dev: Bool = false, version: String? = nil) {
+        let path = args[2]
+        
         guard componentURL.isFileExists else {
-            log(.error, "No \(componentFileName) file. Do an init before")
+            log(.error, "\(componentFileName) does not exists. Please init first.")
             return
         }
         
         guard var component = Component.read(from: componentURL) else {
             return
         }
-        
-        guard component.allDependencies.filter( { $0.path == path}).isEmpty else {
-            log(.error, "\(path) is already added")
-            return
+
+        let dep = component.addCommand(path: path, dev: isDev)
+        //dep.install(version: nil)
+    }
+
+}
+extension Component {
+    mutating func addCommand(path: String, dev: Bool = false, version: String? = nil) -> Dependency {
+        var component = self
+        let find = component.allDependencies.filter( { $0.path == path})
+        if let installedDep = find.first {
+            log(.info, "\(path) is already added")
+            return installedDep
         }
         
         let newDependency = Dependency(path: path, version: version)
@@ -50,6 +57,6 @@ struct AddCommand: Command {
         }
         component.write(to: componentURL)
         
+        return newDependency
     }
 }
-

@@ -40,6 +40,7 @@ kaluza add mesopelagique/formula_compose -D
 
 - [X] release workflow
 - [ ] `install` command
+- [ ] `uninstall` command
 - [ ] better argument parsing (manage order etc...)
 - [ ] doc about version
 - [ ] interactive init like npm

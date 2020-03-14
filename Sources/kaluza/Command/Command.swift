@@ -11,7 +11,7 @@ import Foundation
 enum CommandType: String, CaseIterable {
     case `init`
     case add
-    // case install
+    case install
 }
 
 protocol Command {
@@ -26,6 +26,8 @@ extension CommandType {
             return InitCommand.self
         case .add:
             return AddCommand.self
+        case .install:
+            return InstallCommand.self
         }
     }
 }

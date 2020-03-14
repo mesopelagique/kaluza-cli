@@ -38,7 +38,7 @@ struct InitCommand: Command {
 
     static func findName(for url: URL) -> String? {
         let directory = url.deletingLastPathComponent()
-        let project = directory.appendingPathComponent("Project")
+        let project = directory.appendingPathComponent("Project", isDirectory: true)
         if let projectFile = project.children.filter({ $0.pathExtension == projectExtension }).first {
             return projectFile.deletingPathExtension().lastPathComponent
         } else {
