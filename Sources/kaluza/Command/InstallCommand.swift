@@ -18,8 +18,7 @@ struct InstallCommand: Command {
             return
         }
 
-        let binary = true // TODO take binary from option
-        let version: String? = nil
+        let binary = !args.contains("--skip-bin")
         var dependencies: [Dependency]
 
         if args.count > 2 {
@@ -33,9 +32,9 @@ struct InstallCommand: Command {
 
             let saveDependencies = !args.contains("--no-save") // Prevents saving to dependencies.
             if saveDependencies {
-                dependencies = [component.addCommand(path: path, type: type, version: version)]
+                dependencies = [component.addCommand(path: path, type: type)]
             } else {
-                dependencies = [Dependency(path: path, version: version)]
+                dependencies = [Dependency(path: path)]
             }
 
         } else {
@@ -48,7 +47,7 @@ struct InstallCommand: Command {
         }
 
         for dependency in dependencies {
-            dependency.install(binary: binary, version: version)
+            dependency.install(binary: binary)
         }
     }
 
@@ -100,7 +99,7 @@ extension Dependency {
         return githubURL.appendingPathComponent("/releases/latest/download/\(binaryName)")
     }
 
-    func install(binary: Bool = true, version: String?) {
+    func install(binary: Bool = true) {
         let destinationURL = self.destinationURL
         if destinationURL.isFileExists {
             log(.debug, "\(path) already installed as 4dbase")

@@ -35,7 +35,7 @@ struct AddCommand: Command {
 
 }
 extension Component {
-    mutating func addCommand(path: String, type: DependencyType = .standard, version: String? = nil) -> Dependency {
+    mutating func addCommand(path: String, type: DependencyType = .standard) -> Dependency {
         var component = self
         let find = component.allDependencies.filter({ $0.path == path})
         if let installedDep = find.first {
@@ -48,7 +48,7 @@ extension Component {
             return installedDep
         }
 
-        let newDependency = Dependency(path: path, version: version)
+        let newDependency = Dependency(path: path)
         var dependencies = component.dependencies(for: type)
         dependencies.append(newDependency)
         component.setDependencies(dependencies, for: type)
