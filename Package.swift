@@ -12,8 +12,9 @@ let package = Package(
         .executable(name: "kaluza", targets: ["kaluza"])
     ],
     dependencies: [
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", .upToNextMajor(from: "0.9.11")),
     ],
     targets: [
-        .target( name: "kaluza")
+        .target(name: "kaluza", dependencies: ["ZIPFoundation"])
     ]
 )

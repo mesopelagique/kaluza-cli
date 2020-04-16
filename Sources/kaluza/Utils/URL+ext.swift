@@ -7,12 +7,23 @@
 //
 
 import Foundation
+import ZIPFoundation
 
 let fileManager = FileManager.default
 extension URL {
 
     var isFileExists: Bool {
         return fileManager.fileExists(atPath: self.path)
+    }
+    
+    func remove() -> Bool {
+        do {
+            try fileManager.removeItem(at: self)
+            return true
+        } catch {
+            log(.debug, "Failed to delete \(self.path): \(error)")
+            return false
+        }
     }
 
     var children: [URL] {
@@ -43,5 +54,20 @@ extension URL {
         task.resume()
         semaphore.wait()
         return installed
+    }
+    
+    func unzip(to destinationURL: URL, delete: Bool = false) -> Bool {
+        var unzipped = true
+        
+        do {
+            try fileManager.unzipItem(at: self, to: destinationURL)
+            unzipped = true
+            if delete {
+                _ = self.remove()
+            }
+        } catch {
+            log(.error, "Failed to unzip \(self.path) to \(destinationURL.path):\(error)")
+        }
+        return unzipped
     }
 }

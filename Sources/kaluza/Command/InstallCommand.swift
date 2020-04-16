@@ -89,11 +89,15 @@ extension Dependency {
         return URL(string: "https://github.com/\(path).git")!// clean, remove !
       }
 
-    var binaryName: String {
+    func binaryName(withResources: Bool) -> String {
+        if withResources {
+            return "\(repository).4dbase.zip"
+        }
         return "\(repository).4DZ"
     }
 
-    func binaryURL(version: String? = nil) -> URL {
+    func binaryURL(version: String? = nil, withResources: Bool) -> URL {
+        let binaryName = self.binaryName(withResources: withResources)
         if let version = version {
             return githubURL.appendingPathComponent("/releases/download/\(version)/\(binaryName)")
         }
@@ -110,14 +114,25 @@ extension Dependency {
         var installed = false
 
         if binary {
-            let binaryURL = self.binaryURL(version: version)
-
-            let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName)
+            let binaryURL = self.binaryURL(version: version, withResources: false)
+            let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: false))
             if destinationArchiveURL.isFileExists {
                 log(warnIfInstalled ? .error:.debug, "\(path) already installed as 4DZ")
                 return
             }
             installed = binaryURL.download(to: destinationArchiveURL)
+            
+            if !installed {
+                let binaryURL = self.binaryURL(version: version, withResources: true)
+                let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
+                // info: already warn if installed as 4dbase
+                installed = binaryURL.download(to: destinationArchiveURL)
+                if installed {
+                    installed = destinationArchiveURL.unzip(to: destinationURL.deletingLastPathComponent(), delete: true)
+                }
+            }
+            
+           // https://github.com/vdelachaux/4DPop-Git/archive/v0.2.zip
         }
 
         if !installed {
