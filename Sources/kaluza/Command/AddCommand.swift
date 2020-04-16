@@ -36,11 +36,12 @@ struct AddCommand: Command {
 }
 extension Component {
     mutating func addCommand(path: String, type: DependencyType = .standard) -> Dependency {
+        let newDependency = Dependency(path: path)
         var component = self
-        let find = component.allDependencies.filter({ $0.path == path})
+        let find = component.allDependencies.filter({ $0.path == newDependency.path})
         if let installedDep = find.first {
             log(.info, "\(path) is already added")
-            let findInType = component.allDependencies.filter({ $0.path == path})
+            let findInType = component.allDependencies.filter({ $0.path == newDependency.path})
             if findInType.isEmpty {
                 log(.error, "but not in wanted dependency type \(type)")
             }
@@ -48,7 +49,6 @@ extension Component {
             return installedDep
         }
 
-        let newDependency = Dependency(path: path)
         var dependencies = component.dependencies(for: type)
         dependencies.append(newDependency)
         component.setDependencies(dependencies, for: type)

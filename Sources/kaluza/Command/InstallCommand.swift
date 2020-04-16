@@ -89,19 +89,26 @@ extension Dependency {
         return URL(string: "https://github.com/\(path).git")!// clean, remove !
       }
 
-    func binaryName(withResources: Bool) -> String {
+    func binaryName(withResources: Bool, withVersion: String? = nil) -> String {
         if withResources {
+            if let version = withVersion {
+                return "\(repository).\(version).zip"
+            }
             return "\(repository).4dbase.zip"
         }
         return "\(repository).4DZ"
     }
 
-    func binaryURL(version: String? = nil, withResources: Bool) -> URL {
-        let binaryName = self.binaryName(withResources: withResources)
+    func binaryURL(version: String? = nil, withResources: Bool, withVersion: String? = nil) -> URL {
+        let binaryName = self.binaryName(withResources: withResources, withVersion: withVersion)
         if let version = version {
             return githubURL.appendingPathComponent("/releases/download/\(version)/\(binaryName)")
         }
         return githubURL.appendingPathComponent("/releases/latest/download/\(binaryName)")
+    }
+
+    func versionSourceURL(version: String) -> URL {
+        return githubURL.appendingPathComponent("/archive/v\(version).zip")
     }
 
     func install(binary: Bool = true, warnIfInstalled: Bool) {
@@ -130,27 +137,58 @@ extension Dependency {
                 if installed {
                     installed = destinationArchiveURL.unzip(to: destinationURL.deletingLastPathComponent(), delete: true)
                 }
+                
+                if !installed, self.version != nil {
+                    let binaryURL = self.binaryURL(version: version, withResources: true, withVersion: self.version)
+                    let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
+                    // info: already warn if installed as 4dbase
+                    installed = binaryURL.download(to: destinationArchiveURL)
+                    if installed {
+                        installed = destinationArchiveURL.unzip(to: destinationURL.deletingLastPathComponent(), delete: true)
+                    }
+                }
             }
-            
-           // https://github.com/vdelachaux/4DPop-Git/archive/v0.2.zip
         }
 
         if !installed {
-            let submodule = self.isGitRepo
-            let arguments: [String]
-            if submodule {
-                arguments = ["submodule", "-q", "add", "\(gitURL)", "Components/\(destinationURL.lastPathComponent)"] // must be relative
+            if let version = self.version {
+                let versionSourceURL = self.versionSourceURL(version: version)
+                let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
+                
+                installed = versionSourceURL.download(to: destinationArchiveURL)
+                if installed {
+                    let parent = destinationURL.deletingLastPathComponent()
+                    installed = destinationArchiveURL.unzip(to: parent, delete: true)
+                    if installed {
+                        installed = false
+                        let unzippedFolder = parent.appendingPathComponent(destinationURL.deletingPathExtension().lastPathComponent+"-\(version)") // folder name by github
+                        if unzippedFolder.isFileExists {
+                            do {
+                                try FileManager.default.moveItem(at: unzippedFolder, to: destinationURL)
+                                installed = true
+                            } catch {
+                                log(.error, "Failed to rename \(unzippedFolder) to \(destinationURL)")
+                            }
+                        }
+                    }
+                }
             } else {
-                arguments = ["clone", "-q", "\(gitURL)", "\(destinationURL.path)"]
-            }
-            do {
-                let output = try execute(command: gitPath(), arguments: arguments)
-                log(.debug, output)
-            } catch {
-                log(.error, "\(error)")
+                let submodule = self.isGitRepo
+                let arguments: [String]
+                if submodule {
+                    arguments = ["submodule", "-q", "add", "\(gitURL)", "Components/\(destinationURL.lastPathComponent)"] // must be relative
+                } else {
+                    arguments = ["clone", "-q", "\(gitURL)", "\(destinationURL.path)"]
+                }
+                do {
+                    let output = try execute(command: gitPath(), arguments: arguments)
+                    log(.debug, output)
+                } catch {
+                    log(.error, "\(error)")
+                }
             }
         }
-
+        
     }
 }
 
