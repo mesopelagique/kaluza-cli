@@ -22,7 +22,7 @@ struct Dependency {
         }
     }
 
-    init(path: String, version: String) {
+    init(path: String, version: String?) {
         self.path = path
         self.version = version
     }

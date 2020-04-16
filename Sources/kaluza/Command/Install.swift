@@ -6,10 +6,33 @@
 //
 
 import Foundation
+import ArgumentParser
 
-struct InstallCommand: Command {
+struct Install: ParsableCommand {
 
-    static func run(args: [String]) {
+    static let configuration = CommandConfiguration(abstract: "Install dependencies")
+
+    @Flag(help: "Prevents using 4dz binaries.")
+    var skipBin: Bool
+    @Flag(help: "Prevents saving to dependencies.")
+    var noSave: Bool
+
+    @Flag(help: "Save as dev dependencies.")
+    var saveDev: Bool
+    @Flag(help: "Save as optional dependencies.")
+    var saveOptional: Bool
+
+    //@Flag(help: "Install to global storage.")
+    //var global: Bool
+
+    @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
+    var path: String?
+
+    var dependencyType: DependencyType {
+        return saveDev ? .dev: (self.saveOptional ? .optional : .standard)
+    }
+
+    func run() {
         guard componentURL.isFileExists else {
             log(.error, "\(componentFileName) does not exists. Please init first.")
             return
@@ -18,24 +41,15 @@ struct InstallCommand: Command {
             return
         }
 
-        let binary = !args.contains("--skip-bin")
+        let binary = !skipBin
         var dependencies: [Dependency]
 
         var warnIfInstalled = false
-        if args.count > 2 {
-            let path = args[2]
-
-            //let isGlobal = args.contains("--global") || args.contains("-g")
-
-            let isDev = args.contains("--save-dev") || args.contains("-S")
-            let isOptional = args.contains("--save-optional") || args.contains("-O")
-            let type: DependencyType = isDev ? .dev: (isOptional ? .optional : .standard)
-
-            let saveDependencies = !args.contains("--no-save") // Prevents saving to dependencies.
-            if saveDependencies {
-                dependencies = [component.addCommand(path: path, type: type)]
-            } else {
+        if let path = path {
+            if noSave {
                 dependencies = [Dependency(path: path)]
+            } else {
+                dependencies = [component.addCommand(path: path, type: dependencyType)]
             }
             warnIfInstalled = true // warn only if install one package
         } else {
@@ -62,7 +76,11 @@ extension Dependency {
 
     var componentsURL: URL {
         let directory = componentURL.deletingLastPathComponent()
-        return directory.appendingPathComponent("Components", isDirectory: true)
+        let componentsURL = directory.appendingPathComponent("Components", isDirectory: true)
+        if !componentsURL.isFileExists {
+            try? FileManager.default.createDirectory(at: componentsURL, withIntermediateDirectories: true, attributes: nil)
+        }
+        return componentsURL
     }
 
     fileprivate var isGitRepo: Bool {
@@ -128,7 +146,7 @@ extension Dependency {
                 return
             }
             installed = binaryURL.download(to: destinationArchiveURL)
-            
+
             if !installed {
                 let binaryURL = self.binaryURL(version: version, withResources: true)
                 let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
@@ -137,7 +155,7 @@ extension Dependency {
                 if installed {
                     installed = destinationArchiveURL.unzip(to: destinationURL.deletingLastPathComponent(), delete: true)
                 }
-                
+
                 if !installed, self.version != nil {
                     let binaryURL = self.binaryURL(version: version, withResources: true, withVersion: self.version)
                     let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
@@ -154,7 +172,7 @@ extension Dependency {
             if let version = self.version {
                 let versionSourceURL = self.versionSourceURL(version: version)
                 let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
-                
+
                 installed = versionSourceURL.download(to: destinationArchiveURL)
                 if installed {
                     let parent = destinationURL.deletingLastPathComponent()
@@ -188,7 +206,7 @@ extension Dependency {
                 }
             }
         }
-        
+
     }
 }
 

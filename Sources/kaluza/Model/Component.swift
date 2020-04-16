@@ -37,7 +37,7 @@ extension Component: Codable {
             let strings = try values.decode([String].self, forKey: .dependencies)
             self.dependencies = strings.map { Dependency(path: $0) }
         } catch {
-            let map = try? values.decode([String: String].self, forKey: .dependencies)
+            let map = try? values.decode([String: String?].self, forKey: .dependencies)
             self.dependencies = map?.map { key, value in Dependency(path: key, version: value) }
         }
 
@@ -45,7 +45,7 @@ extension Component: Codable {
             let strings = try values.decode([String].self, forKey: .devDependencies)
             self.devDependencies = strings.map { Dependency(path: $0) }
         } catch {
-            let map = try? values.decode([String: String].self, forKey: .devDependencies)
+            let map = try? values.decode([String: String?].self, forKey: .devDependencies)
             self.devDependencies = map?.map { key, value in Dependency(path: key, version: value) }
         }
 
@@ -53,7 +53,7 @@ extension Component: Codable {
             let strings = try values.decode([String].self, forKey: .optionalDependencies)
             self.optionalDependencies = strings.map { Dependency(path: $0) }
         } catch {
-            let map = try? values.decode([String: String].self, forKey: .optionalDependencies)
+            let map = try? values.decode([String: String?].self, forKey: .optionalDependencies)
             self.optionalDependencies = map?.map { key, value in Dependency(path: key, version: value) }
         }
     }

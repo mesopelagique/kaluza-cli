@@ -69,10 +69,10 @@ Install all dependencies defined in `component.json`
 
 - [X] release workflow
 - [X] `install` command
-- [ ] `uninstall` command
-- [ ] better argument parsing (manage order etc...)
-- [ ] doc about version
+- [X] better argument parsing (manage order etc...)
 - [ ] interactive init like npm
+- [ ] `uninstall` command
+- [ ] doc about version
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->

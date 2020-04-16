@@ -13,8 +13,9 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", .upToNextMajor(from: "0.9.11")),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.5")
     ],
     targets: [
-        .target(name: "kaluza", dependencies: ["ZIPFoundation"])
+        .target(name: "kaluza", dependencies: ["ZIPFoundation", "ArgumentParser"])
     ]
 )

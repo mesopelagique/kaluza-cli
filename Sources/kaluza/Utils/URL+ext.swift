@@ -15,7 +15,7 @@ extension URL {
     var isFileExists: Bool {
         return fileManager.fileExists(atPath: self.path)
     }
-    
+
     func remove() -> Bool {
         do {
             try fileManager.removeItem(at: self)
@@ -55,10 +55,10 @@ extension URL {
         semaphore.wait()
         return installed
     }
-    
+
     func unzip(to destinationURL: URL, delete: Bool = false) -> Bool {
         var unzipped = true
-        
+
         do {
             try fileManager.unzipItem(at: self, to: destinationURL)
             unzipped = true

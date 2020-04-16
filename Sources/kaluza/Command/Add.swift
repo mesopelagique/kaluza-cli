@@ -7,20 +7,25 @@
 //
 
 import Foundation
+import ArgumentParser
 
-struct AddCommand: Command {
+struct Add: ParsableCommand {
 
-    static func run(args: [String]) {
-        guard args.count > 2 else {
-            log(.error, "Need path as argument")
-            usage(args[0])
-            exit(2)
-        }
-        let isDev = args.contains("--save-dev") || args.contains("-S")
-        let isOptional = args.contains("--save-optional") || args.contains("-O")
-        let type: DependencyType = isDev ? .dev: (isOptional ? .optional : .standard)
-        let path = args[2]
+    static let configuration = CommandConfiguration(abstract: "Add dependencies without installing it")
 
+    @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
+    var path: String
+
+    @Flag(help: "Save as dev dependencies.")
+    var saveDev: Bool
+    @Flag(help: "Save as optional dependencies.")
+    var saveOptional: Bool
+
+    var dependencyType: DependencyType {
+        return saveDev ? .dev: (self.saveOptional ? .optional : .standard)
+    }
+
+    func run() {
         guard componentURL.isFileExists else {
             log(.error, "\(componentFileName) does not exists. Please init first.")
             return
@@ -30,7 +35,7 @@ struct AddCommand: Command {
             return
         }
 
-        _ = component.addCommand(path: path, type: type)
+        _ = component.addCommand(path: path, type: dependencyType)
     }
 
 }
