@@ -40,6 +40,11 @@ extension Component {
         let find = component.allDependencies.filter({ $0.path == path})
         if let installedDep = find.first {
             log(.info, "\(path) is already added")
+            let findInType = component.allDependencies.filter({ $0.path == path})
+            if findInType.isEmpty {
+                log(.error, "but not in wanted dependency type \(type)")
+            }
+
             return installedDep
         }
 
