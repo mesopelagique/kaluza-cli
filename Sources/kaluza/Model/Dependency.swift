@@ -15,8 +15,19 @@ struct Dependency {
 
 }
 
-enum DependencyType {
+enum DependencyType: CaseIterable {
     case standard
     case dev
     case optional
+}
+
+extension DependencyType {
+    var isMandatory: Bool {
+        switch self {
+        case .optional:
+            return false
+        default:
+            return true
+        }
+    }
 }

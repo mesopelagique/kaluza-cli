@@ -114,8 +114,20 @@ extension Component: Codable {
 
 extension Component {
 
+    var allMandatoryDependencies: [Dependency] {
+        var allDependencies: [Dependency] = []
+        for type in DependencyType.allCases where type.isMandatory {
+            allDependencies += dependencies(for: type)
+        }
+        return allDependencies
+    }
+
     var allDependencies: [Dependency] {
-        return (dependencies ?? []) + (devDependencies ?? [])
+        var allDependencies: [Dependency] = []
+        for type in DependencyType.allCases {
+            allDependencies += dependencies(for: type)
+        }
+        return allDependencies
     }
 }
 

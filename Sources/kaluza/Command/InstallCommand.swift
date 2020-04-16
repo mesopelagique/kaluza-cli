@@ -35,11 +35,11 @@ struct InstallCommand: Command {
             if saveDependencies {
                 dependencies = [component.addCommand(path: path, type: type, version: version)]
             } else {
-                dependencies = component.allDependencies + [Dependency(path: path, version: version)]
+                dependencies = [Dependency(path: path, version: version)]
             }
 
         } else {
-            dependencies = component.allDependencies  // XXX get dependencies according to option like dev or not
+            dependencies = component.allMandatoryDependencies  // XXX get dependencies according to option like dev or not
         }
 
         guard !dependencies.isEmpty else {
