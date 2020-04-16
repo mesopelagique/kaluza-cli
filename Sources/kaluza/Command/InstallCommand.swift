@@ -21,6 +21,7 @@ struct InstallCommand: Command {
         let binary = !args.contains("--skip-bin")
         var dependencies: [Dependency]
 
+        var warnIfInstalled = false
         if args.count > 2 {
             let path = args[2]
 
@@ -36,7 +37,7 @@ struct InstallCommand: Command {
             } else {
                 dependencies = [Dependency(path: path)]
             }
-
+            warnIfInstalled = true // warn only if install one package
         } else {
             dependencies = component.allMandatoryDependencies  // XXX get dependencies according to option like dev or not
         }
@@ -47,7 +48,7 @@ struct InstallCommand: Command {
         }
 
         for dependency in dependencies {
-            dependency.install(binary: binary)
+            dependency.install(binary: binary, warnIfInstalled: warnIfInstalled)
         }
     }
 
@@ -99,10 +100,10 @@ extension Dependency {
         return githubURL.appendingPathComponent("/releases/latest/download/\(binaryName)")
     }
 
-    func install(binary: Bool = true) {
+    func install(binary: Bool = true, warnIfInstalled: Bool) {
         let destinationURL = self.destinationURL
         if destinationURL.isFileExists {
-            log(.debug, "\(path) already installed as 4dbase")
+            log(warnIfInstalled ? .error:.debug, "\(path) already installed as 4dbase")
             return
         }
 
@@ -113,7 +114,7 @@ extension Dependency {
 
             let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName)
             if destinationArchiveURL.isFileExists {
-                log(.debug, "\(path) already installed as 4DZ")
+                log(warnIfInstalled ? .error:.debug, "\(path) already installed as 4DZ")
                 return
             }
             installed = binaryURL.download(to: destinationArchiveURL)
