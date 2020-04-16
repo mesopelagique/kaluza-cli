@@ -9,7 +9,7 @@
 import Foundation
 enum Level {
     case debug, info, error
-    
+
     static var isDebug: Bool = false
 }
 func log(_ level: Level, _ message: String) {

@@ -8,7 +8,7 @@
 import Foundation
 
 struct InstallCommand: Command {
-    
+
     static func run(args: [String]) {
         guard componentURL.isFileExists else {
             log(.error, "\(componentFileName) does not exists. Please init first.")
@@ -17,16 +17,31 @@ struct InstallCommand: Command {
         guard var component = Component.read(from: componentURL) else {
             return
         }
-        
+
         let binary = true // TODO take binary from option
         let version: String? = nil
-        var dependencies = component.allDependencies  // XXX get dependencies according to option like dev or not
+        var dependencies: [Dependency]
+
         if args.count > 2 {
-           let path = args[2]
-           let isDev = args.contains("--save-dev") || args.contains("-S")
-            dependencies = [component.addCommand(path: path, dev: isDev, version: version)]
+            let path = args[2]
+
+            //let isGlobal = args.contains("--global") || args.contains("-g")
+
+            let isDev = args.contains("--save-dev") || args.contains("-S")
+            let isOptional = args.contains("--save-optional") || args.contains("-O")
+            let type: DependencyType = isDev ? .dev: (isOptional ? .optional : .standard)
+
+            let saveDependencies = !args.contains("--no-save") // Prevents saving to dependencies.
+            if saveDependencies {
+                dependencies = [component.addCommand(path: path, type: type, version: version)]
+            } else {
+                dependencies = component.allDependencies + [Dependency(path: path, version: version)]
+            }
+
+        } else {
+            dependencies = component.allDependencies  // XXX get dependencies according to option like dev or not
         }
-        
+
         guard !dependencies.isEmpty else {
             log(.error, "No dependencies to install")
             return
@@ -38,18 +53,18 @@ struct InstallCommand: Command {
     }
 
 }
- 
+
 extension Dependency {
 
     var repository: String {
        return String(self.path.split(separator: "/").last!) // clean, remove !
     }
-    
+
     var componentsURL: URL {
         let directory = componentURL.deletingLastPathComponent()
         return directory.appendingPathComponent("Components", isDirectory: true)
     }
-    
+
     fileprivate var isGitRepo: Bool {
         let directory = componentURL.deletingLastPathComponent()
         return directory.appendingPathComponent(".git", isDirectory: true).isFileExists
@@ -73,30 +88,30 @@ extension Dependency {
     var gitURL: URL {
         return URL(string: "https://github.com/\(path).git")!// clean, remove !
       }
-    
+
     var binaryName: String {
         return "\(repository).4DZ"
     }
-    
+
     func binaryURL(version: String? = nil) -> URL {
         if let version = version {
             return githubURL.appendingPathComponent("/releases/download/\(version)/\(binaryName)")
         }
         return githubURL.appendingPathComponent("/releases/latest/download/\(binaryName)")
     }
-    
+
     func install(binary: Bool = true, version: String?) {
         let destinationURL = self.destinationURL
         if destinationURL.isFileExists {
             log(.debug, "\(path) already installed as 4dbase")
             return
         }
-        
+
         var installed = false
-        
+
         if binary {
             let binaryURL = self.binaryURL(version: version)
-            
+
             let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName)
             if destinationArchiveURL.isFileExists {
                 log(.debug, "\(path) already installed as 4DZ")
@@ -104,7 +119,7 @@ extension Dependency {
             }
             installed = binaryURL.download(to: destinationArchiveURL)
         }
-        
+
         if !installed {
             let submodule = self.isGitRepo
             let arguments: [String]
@@ -120,7 +135,7 @@ extension Dependency {
                 log(.error, "\(error)")
             }
         }
-        
+
     }
 }
 
@@ -140,7 +155,7 @@ private func execute(command: String, arguments: [String] = []) throws -> String
     process.launchPath = command
     process.arguments = arguments
     process.currentDirectoryURL = componentURL.deletingLastPathComponent()
-    
+
     let pipe = Pipe()
     process.standardOutput = pipe
     try process.run()

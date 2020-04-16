@@ -12,5 +12,11 @@ struct Dependency {
 
     var path: String
     var version: String?
-    
+
+}
+
+enum DependencyType {
+    case standard
+    case dev
+    case optional
 }

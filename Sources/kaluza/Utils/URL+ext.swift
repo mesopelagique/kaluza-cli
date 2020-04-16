@@ -8,21 +8,21 @@
 
 import Foundation
 
-
+let fileManager = FileManager.default
 extension URL {
-    
+
     var isFileExists: Bool {
-        return FileManager.default.fileExists(atPath: self.path)
+        return fileManager.fileExists(atPath: self.path)
     }
-    
+
     var children: [URL] {
-        return (try? FileManager.default.contentsOfDirectory(at: self, includingPropertiesForKeys: nil, options: []) ) ?? []
+        return (try? fileManager.contentsOfDirectory(at: self, includingPropertiesForKeys: nil, options: []) ) ?? []
     }
 
     /// download sync
     func download(to destinationURL: URL) -> Bool {
         var installed = false
-       
+
         let semaphore = DispatchSemaphore(value: 0)
         let task = URLSession.shared.downloadTask(with: self) { localURL, urlResponse, error in
             if let localURL = localURL, let urlResponse = urlResponse as? HTTPURLResponse, urlResponse.statusCode == 200 {

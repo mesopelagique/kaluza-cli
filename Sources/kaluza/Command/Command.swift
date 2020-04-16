@@ -15,7 +15,7 @@ enum CommandType: String, CaseIterable {
 }
 
 protocol Command {
-    static func run(args: [String]) -> Void
+    static func run(args: [String])
 }
 
 extension CommandType {
