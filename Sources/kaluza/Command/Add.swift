@@ -13,12 +13,12 @@ struct Add: ParsableCommand {
 
     static let configuration = CommandConfiguration(abstract: "Add dependencies without installing it")
 
-    @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
+    @Argument(help: "The dependency path: <githubname>/<githubrepo>(@<version).")
     var path: String
 
-    @Flag(help: "Save as dev dependencies.")
+    @Flag(name: [.customShort("D"), .long], help: "Save as dev dependencies.")
     var saveDev: Bool
-    @Flag(help: "Save as optional dependencies.")
+    @Flag(name: [.customShort("O"), .long], help: "Save as optional dependencies.")
     var saveOptional: Bool
 
     var dependencyType: DependencyType {
@@ -61,5 +61,13 @@ extension Component {
         component.write(to: componentURL)
 
         return newDependency
+    }
+}
+
+extension JSONEncoder {
+    static var component: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
     }
 }

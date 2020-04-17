@@ -13,13 +13,13 @@ struct Install: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Install dependencies")
 
     @Flag(help: "Prevents using 4dz binaries.")
-    var skipBin: Bool
+    var noBin: Bool
     @Flag(help: "Prevents saving to dependencies.")
     var noSave: Bool
 
-    @Flag(help: "Save as dev dependencies.")
+    @Flag(name: [.customShort("D"), .long], help: "Save as dev dependencies.")
     var saveDev: Bool
-    @Flag(help: "Save as optional dependencies.")
+    @Flag(name: [.customShort("O"), .long], help: "Save as optional dependencies.")
     var saveOptional: Bool
 
     //@Flag(help: "Install to global storage.")
@@ -41,7 +41,7 @@ struct Install: ParsableCommand {
             return
         }
 
-        let binary = !skipBin
+        let binary = !noBin
         var dependencies: [Dependency]
 
         var warnIfInstalled = false
@@ -221,7 +221,7 @@ func gitPath() -> String {
     return "git"
 }
 
-private func execute(command: String, arguments: [String] = []) throws -> String {
+func execute(command: String, arguments: [String] = []) throws -> String {
     let process = Process()
     process.launchPath = command
     process.arguments = arguments

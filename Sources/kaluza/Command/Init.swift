@@ -13,9 +13,9 @@ struct Init: ParsableCommand {
 
     static let configuration = CommandConfiguration(abstract: "Initialize by creating a component.json file")
 
-    @Flag(help: "Generate it without having it ask any questions.")
+    @Flag(name: [.short, .long], help: "Generate it without having it ask any questions.")
     var force: Bool
-    @Flag(help: "Generate it without having it ask any questions.")
+    @Flag(name: [.short, .long], help: "Generate it without having it ask any questions.")
     var yes: Bool
 
     func run() {
@@ -26,22 +26,50 @@ struct Init: ParsableCommand {
         var component = Component()
         component.dependencies = []
         component.name = findName(for: componentURL)
+        component.gitRemote = findGitRemove(for: componentURL)
         let noQuestion = yes || force
         if !noQuestion {
-
-            // TODO could ask user some information
-            // package name: (toto) test
+            // could ask user some information
+            print("name: (\(component.name ?? "")):")
+            if let name = readLine(), !name.isEmpty {
+                component.name = name
+            }
             //version: (1.0.0)
             //description:
+            print("description:")
+            if let description = readLine(), !description.isEmpty {
+                component.description = description
+            }
             //entry point: (index.js)
             //git repository:
+            print("git repository: (\(component.gitRemote ?? ""))")
+            if let gitRemote = readLine(), !gitRemote.isEmpty {
+                component.gitRemote = gitRemote
+            }
             //keywords:
+            print("keywords:")
+            if let keywords = readLine(), !keywords.isEmpty {
+                component.keywords = keywords.components(separatedBy: " ")
+            }
             //author:
+            print("author:")
+            if let author = readLine(), !author.isEmpty {
+                component.author = author
+            }
             //license: (ISC)
-            //About to write to component.json:
-            // output JSON
-        }
+            print("About to write to component.json:")
 
+            print(String(data: (try? JSONEncoder.component.encode(component)) ?? Data(), encoding: .utf8) ?? "")
+
+            // Is this OK? (yes)
+            print("Is this OK? (yes)")
+            if let confirm = readLine() {
+                if confirm != "yes" && confirm != "y" && !confirm.isEmpty {
+                    print("Aborted")
+                    return
+                }
+            }
+        }
         component.write(to: componentURL)
         log(.debug, "Initialized. \(componentFileName) created.")
     }
@@ -54,6 +82,24 @@ struct Init: ParsableCommand {
         } else {
             return directory.lastPathComponent
         }
+    }
+    func findGitRemove(for url: URL) -> String? {
+        do {
+            var arguments = ["remote"]
+            var output = try execute(command: gitPath(), arguments: arguments)
+            log(.debug, output)
+            if !output.isEmpty {
+                arguments = ["remote", "get-url", output.replacingOccurrences(of: "\n", with: "")]
+                output = try execute(command: gitPath(), arguments: arguments)
+                log(.debug, output)
+                if output.contains("http") {
+                    return output.replacingOccurrences(of: "\n", with: "")
+                }
+            }
+        } catch {
+            log(.error, "\(error)")
+        }
+        return nil
     }
 
 }

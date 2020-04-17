@@ -38,7 +38,7 @@ A `component.json` file will be created in current folder (with name of the proj
 kaluza add mesopelagique/formula_compose
 ```
 
-A dependency will be added to your `component.json`
+A dependency will be added to your `component.json` without installing
 
 #### Add a developpement dependency
 
@@ -65,14 +65,25 @@ kaluza install
 ```
 Install all dependencies defined in `component.json`
 
+
+### Install a specific version
+
+Use `@` to specify a release version. 
+
+```
+kaluza install mesopelagique/formula_compose@1.0.0
+```
+
+> For this example the binary or the source will be taken from https://github.com/mesopelagique/formula_compose/releases/1.0.0
+
 ## TODO
 
 - [X] release workflow
 - [X] `install` command
 - [X] better argument parsing (manage order etc...)
-- [ ] interactive init like npm
+- [X] interactive init like npm
+- [ ] recursive dependencies
 - [ ] `uninstall` command
-- [ ] doc about version
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->

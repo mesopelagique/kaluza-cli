@@ -12,6 +12,9 @@ struct Component {
 
     var name: String?
     var description: String?
+    var keywords: [String]?
+    var author: String?
+    var repository: Repository?
 
     // dependencies for the component
     var dependencies: [Dependency]?
@@ -24,7 +27,7 @@ struct Component {
 extension Component: Codable {
 
     enum CodingKeys: String, CodingKey {
-        case name, description, dependencies, devDependencies, optionalDependencies
+        case name, description, keywords, author, repository, dependencies, devDependencies, optionalDependencies
     }
 
     init(from decoder: Decoder) throws {
@@ -32,6 +35,9 @@ extension Component: Codable {
 
         self.name = try? values.decode(String.self, forKey: .name)
         self.description = try? values.decode(String.self, forKey: .description)
+        self.author = try? values.decode(String.self, forKey: .author)
+        self.keywords = try? values.decode([String].self, forKey: .keywords)
+        self.repository = try? values.decode(Repository.self, forKey: .repository)
 
         do {
             let strings = try values.decode([String].self, forKey: .dependencies)
@@ -65,6 +71,15 @@ extension Component: Codable {
         }
         if let description = description {
             try container.encode(description, forKey: .description)
+        }
+        if let author = author {
+            try container.encode(author, forKey: .author)
+        }
+        if let keywords = keywords {
+            try container.encode(keywords, forKey: .keywords)
+        }
+        if let repository = repository {
+            try container.encode(repository, forKey: .repository)
         }
         if let dependencies = self.dependencies {
             if dependencies.filter({ $0.version != nil }).isEmpty {
@@ -134,9 +149,7 @@ extension Component {
 extension Component {
     func write(to url: URL) {
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            try encoder.encode(self).write(to: url)
+            try JSONEncoder.component.encode(self).write(to: url)
         } catch {
             log(.error, "\(error)")
         }
@@ -152,4 +165,25 @@ extension Component {
             return nil
         }
     }
+}
+
+extension Component {
+
+    var gitRemote: String? {
+        get {
+            return self.repository?.url
+        }
+        set {
+            if let newValue = newValue {
+                self.repository = Repository(url: newValue, type: "git")
+            } else {
+                self.repository = nil
+            }
+        }
+    }
+}
+
+struct Repository: Codable {
+    var url: String
+    var type: String
 }
