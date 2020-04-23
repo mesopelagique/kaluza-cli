@@ -76,7 +76,7 @@ kaluza install mesopelagique/formula_compose@1.0.0
 
 > For this example the binary or the source will be taken from https://github.com/mesopelagique/formula_compose/releases/1.0.0
 
-### Others options
+### Options
 
 - --no-bin: do not use binary or archive from release, use git command instead to get dependencies
 - --no-save: install the dependencies but do not save for later
