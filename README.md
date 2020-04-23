@@ -82,6 +82,7 @@ kaluza install mesopelagique/formula_compose@1.0.0
 - [X] `install` command
 - [X] better argument parsing (manage order etc...)
 - [X] interactive init like npm
+- [ ] install globally (in 4d app ?)
 - [ ] recursive dependencies
 - [ ] `uninstall` command
 
