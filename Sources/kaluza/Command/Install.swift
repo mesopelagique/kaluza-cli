@@ -22,19 +22,41 @@ struct Install: ParsableCommand {
     @Flag(name: [.customShort("O"), .long], help: "Save as optional dependencies.")
     var saveOptional: Bool
 
-    //@Flag(help: "Install to global storage.")
-    //var global: Bool
+    @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
+    var global: Bool
+
+    @Flag(name: [.customShort("f"), .long], help: "Force (for git command).")
+    var force: Bool
 
     @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
     var path: String?
+
+    @Flag(help: "Show debug information.")
+    var verbose: Bool
 
     var dependencyType: DependencyType {
         return saveDev ? .dev: (self.saveOptional ? .optional : .standard)
     }
 
+    var url: URL? {
+        if global {
+            let url: URL = .globalComponent
+            if !url.isFileExists {
+                Component().write(to: url)
+            }
+            return url
+        } else {
+            guard componentURL.isFileExists else {
+                log(.error, "\(componentFileName) does not exists. Please init first.")
+                return nil
+            }
+            return componentURL
+        }
+    }
+
     func run() {
-        guard componentURL.isFileExists else {
-            log(.error, "\(componentFileName) does not exists. Please init first.")
+        Level.isDebug = verbose
+        guard let componentURL = self.url else {
             return
         }
         guard var component = Component.read(from: componentURL) else {
@@ -50,6 +72,8 @@ struct Install: ParsableCommand {
                 dependencies = [Dependency(path: path)]
             } else {
                 dependencies = [component.addCommand(path: path, type: dependencyType)]
+
+                component.write(to: componentURL)
             }
             warnIfInstalled = true // warn only if install one package
         } else {
@@ -62,7 +86,7 @@ struct Install: ParsableCommand {
         }
 
         for dependency in dependencies {
-            dependency.install(binary: binary, warnIfInstalled: warnIfInstalled)
+            dependency.install(binary: binary, warnIfInstalled: warnIfInstalled, global: global, force: force)
         }
     }
 
@@ -83,21 +107,26 @@ extension Dependency {
         return componentsURL
     }
 
+    // XXX Use 4d app as global, maye ind another wayN
+    var globalComponentsURL: URL {
+        let componentsURL = URL.appURL.appendingPathComponent("Contents", isDirectory: true).appendingPathComponent("Components", isDirectory: true)
+        if !componentsURL.isFileExists {
+            try? FileManager.default.createDirectory(at: componentsURL, withIntermediateDirectories: true, attributes: nil)
+        }
+        return componentsURL
+    }
+
     fileprivate var isGitRepo: Bool {
         let directory = componentURL.deletingLastPathComponent()
         return directory.appendingPathComponent(".git", isDirectory: true).isFileExists
     }
 
-    var destinationURL: URL {
+    func destinationURL(componentsURL: URL) -> URL {
         let name = self.repository
         if name.lowercased().contains(".4dbase") {
             return componentsURL.appendingPathComponent(name)
         }
         return componentsURL.appendingPathComponent(name).appendingPathExtension("4dbase")
-    }
-
-    var isInstalled: Bool {
-        return destinationURL.isFileExists
     }
 
     var githubURL: URL {
@@ -129,10 +158,16 @@ extension Dependency {
         return githubURL.appendingPathComponent("/archive/v\(version).zip")
     }
 
-    func install(binary: Bool = true, warnIfInstalled: Bool) {
-        let destinationURL = self.destinationURL
+    func install(binary: Bool, warnIfInstalled: Bool, global: Bool, force: Bool) {
+        let componentsURL: URL
+        if global {
+            componentsURL = self.globalComponentsURL
+        } else {
+            componentsURL = self.componentsURL
+        }
+        let destinationURL = self.destinationURL(componentsURL: componentsURL)
         if destinationURL.isFileExists {
-            log(warnIfInstalled ? .error:.debug, "\(path) already installed as 4dbase")
+            log(warnIfInstalled ? .error:.debug, "\(path) already installed as 4dbase") // XXX maybe if force redownload
             return
         }
 
@@ -147,7 +182,9 @@ extension Dependency {
             }
             installed = binaryURL.download(to: destinationArchiveURL)
 
-            if !installed {
+            if installed {
+                log(.info, "\(path) installed using release 4DZ")
+            } else {
                 let binaryURL = self.binaryURL(version: version, withResources: true)
                 let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: true))
                 // info: already warn if installed as 4dbase
@@ -163,6 +200,9 @@ extension Dependency {
                     installed = binaryURL.download(to: destinationArchiveURL)
                     if installed {
                         installed = destinationArchiveURL.unzip(to: destinationURL.deletingLastPathComponent(), delete: true)
+                        if installed {
+                            log(.info, "\(path) installed using release archive")
+                        }
                     }
                 }
             }
@@ -184,6 +224,7 @@ extension Dependency {
                             do {
                                 try FileManager.default.moveItem(at: unzippedFolder, to: destinationURL)
                                 installed = true
+                                log(.info, "\(path) installed using release \(version) archive")
                             } catch {
                                 log(.error, "Failed to rename \(unzippedFolder) to \(destinationURL)")
                             }
@@ -191,16 +232,24 @@ extension Dependency {
                     }
                 }
             } else {
-                let submodule = self.isGitRepo
-                let arguments: [String]
+                let submodule = self.isGitRepo && !global
+                var arguments: [String]
                 if submodule {
                     arguments = ["submodule", "-q", "add", "\(gitURL)", "Components/\(destinationURL.lastPathComponent)"] // must be relative
                 } else {
                     arguments = ["clone", "-q", "\(gitURL)", "\(destinationURL.path)"]
                 }
+                if force {
+                    arguments.insert("--force", at: 2)
+                }
                 do {
-                    let output = try execute(command: gitPath(), arguments: arguments)
+                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
                     log(.debug, output)
+                    if submodule {
+                        log(.info, "\(path) installed as gitsubmodule")
+                    } else {
+                        log(.info, "\(path) installed using git clone")
+                    }
                 } catch {
                     log(.error, "\(error)")
                 }
@@ -212,25 +261,11 @@ extension Dependency {
 
 func gitPath() -> String {
     do {
-        var output = try execute(command: "/usr/bin/which", arguments: ["git"])
+        var output = try Bash.execute(commandName: "/usr/bin/which", arguments: ["git"]) ?? ""
         output.removeLast() // remove \n
         return output
     } catch {
         log(.error, "\(error)")
     }
     return "git"
-}
-
-func execute(command: String, arguments: [String] = []) throws -> String {
-    let process = Process()
-    process.launchPath = command
-    process.arguments = arguments
-    process.currentDirectoryURL = componentURL.deletingLastPathComponent()
-
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    try process.run()
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let output = String(data: data, encoding: .utf8)
-    return output ?? ""
 }

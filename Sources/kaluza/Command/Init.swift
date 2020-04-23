@@ -17,8 +17,11 @@ struct Init: ParsableCommand {
     var force: Bool
     @Flag(name: [.short, .long], help: "Generate it without having it ask any questions.")
     var yes: Bool
+    @Flag(help: "Show debug information.")
+    var verbose: Bool
 
     func run() {
+        Level.isDebug = verbose
         guard !componentURL.isFileExists else {
             log(.error, "Already initialized. \(componentFileName) exists")
             return
@@ -86,11 +89,11 @@ struct Init: ParsableCommand {
     func findGitRemove(for url: URL) -> String? {
         do {
             var arguments = ["remote"]
-            var output = try execute(command: gitPath(), arguments: arguments)
+            var output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
             log(.debug, output)
             if !output.isEmpty {
                 arguments = ["remote", "get-url", output.replacingOccurrences(of: "\n", with: "")]
-                output = try execute(command: gitPath(), arguments: arguments)
+                output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
                 log(.debug, output)
                 if output.contains("http") {
                     return output.replacingOccurrences(of: "\n", with: "")

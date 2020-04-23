@@ -25,9 +25,31 @@ struct Add: ParsableCommand {
         return saveDev ? .dev: (self.saveOptional ? .optional : .standard)
     }
 
+    @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
+    var global: Bool
+
+    @Flag(help: "Show debug information.")
+    var verbose: Bool
+
+    var url: URL? {
+        if global {
+            let url: URL = .globalComponent
+            if !url.isFileExists {
+                Component().write(to: url)
+            }
+            return url
+        } else {
+            guard componentURL.isFileExists else {
+                log(.error, "\(componentFileName) does not exists. Please init first.")
+                return nil
+            }
+            return componentURL
+        }
+    }
+
     func run() {
-        guard componentURL.isFileExists else {
-            log(.error, "\(componentFileName) does not exists. Please init first.")
+        Level.isDebug = verbose
+        guard let componentURL = url else {
             return
         }
 
@@ -36,17 +58,18 @@ struct Add: ParsableCommand {
         }
 
         _ = component.addCommand(path: path, type: dependencyType)
+        component.write(to: componentURL)
     }
 
 }
 extension Component {
     mutating func addCommand(path: String, type: DependencyType = .standard) -> Dependency {
         let newDependency = Dependency(path: path)
-        var component = self
-        let find = component.allDependencies.filter({ $0.path == newDependency.path})
+
+        let find = self.allDependencies.filter({ $0.path == newDependency.path})
         if let installedDep = find.first {
             log(.info, "\(path) is already added")
-            let findInType = component.allDependencies.filter({ $0.path == newDependency.path})
+            let findInType = self.allDependencies.filter({ $0.path == newDependency.path})
             if findInType.isEmpty {
                 log(.error, "but not in wanted dependency type \(type)")
             }
@@ -54,11 +77,9 @@ extension Component {
             return installedDep
         }
 
-        var dependencies = component.dependencies(for: type)
+        var dependencies = self.dependencies(for: type)
         dependencies.append(newDependency)
-        component.setDependencies(dependencies, for: type)
-
-        component.write(to: componentURL)
+        self.setDependencies(dependencies, for: type)
 
         return newDependency
     }

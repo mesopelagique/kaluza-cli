@@ -30,6 +30,35 @@ extension URL {
         return (try? fileManager.contentsOfDirectory(at: self, includingPropertiesForKeys: nil, options: []) ) ?? []
     }
 
+    static var applicationSupportDirectory: URL {
+        return fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    }
+
+    static var globalComponent: URL {
+        let url = self.applicationSupportDirectory.appendingPathComponent("4D")
+        if !url.isFileExists {
+            try! fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+        }
+        return url.appendingPathComponent("kaluza.json")
+    }
+
+    static var appURL: URL {
+        var url = URL(fileURLWithPath: "/Applications/4D.app")
+        if url.isFileExists {
+            return url
+        }
+        url = URL(fileURLWithPath: "/Applications/4D/4D.app")
+        if url.isFileExists {
+            return url
+        }
+        if  let founds = try? Bash.execute(commandName: "mdfind", arguments: ["-name", "4D.app"]),
+            !founds.isEmpty, let path = founds.split(separator: "\n").first {
+            return URL(fileURLWithPath: String(path))
+        }
+        log(.error, "4D app not found. /Applications/4D.app path used.")
+        return URL(fileURLWithPath: "/Applications/4D.app")
+    }
+
     /// download sync
     func download(to destinationURL: URL) -> Bool {
         var installed = false
