@@ -81,7 +81,7 @@ kaluza install mesopelagique/formula_compose@1.0.0
 - --no-bin: do not use binary or archive from release, use git command instead to get dependencies
 - --no-save: install the dependencies but do not save for later
 - -g/--global: allow to install into your 4D.app instead of current component.
-  -For component useful only for dev purpose
+  - For component useful only for dev purpose
   - `/Users/phimage/Library/Application Support/4D/kaluza.json` file will save your dependencies.
 - --verbose: allow to display debug information
 
