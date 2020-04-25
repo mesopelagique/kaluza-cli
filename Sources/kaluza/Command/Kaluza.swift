@@ -12,5 +12,5 @@ struct Kaluza: ParsableCommand {
 
     static let configuration = CommandConfiguration(
         abstract: "Package manager for 4D.",
-        subcommands: [Init.self, Install.self, Add.self])
+        subcommands: [Init.self, Install.self, Add.self, List.self, Klein.self])
 }
