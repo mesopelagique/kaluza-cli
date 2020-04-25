@@ -35,6 +35,12 @@ A `component.json` file will be created in current folder (with name of the proj
 ### Add a dependency
 
 ```
+kaluza add <github user>/<github repository>
+```
+
+example:
+
+```
 kaluza add mesopelagique/formula_compose
 ```
 
@@ -75,6 +81,14 @@ kaluza install mesopelagique/formula_compose@1.0.0
 ```
 
 > For this example the binary or the source will be taken from https://github.com/mesopelagique/formula_compose/releases/1.0.0
+
+### Uninstall a dependency
+
+example:
+
+```
+kaluza uninstall mesopelagique/formula_compose
+```
 
 ### Options
 
