@@ -13,7 +13,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: Switch XCode Version
-        run: sudo xcode-select -s /Applications/Xcode_11.4.app  
+        run: sudo xcode-select -s /Applications/Xcode_11.4.app
+      - name: 🔢 Edit version file
+        run: |
+          RELEASE_NAME=$(jq --raw-output '.release.tag_name' $GITHUB_EVENT_PATH)
+          sed -i '' "s/d.e.v/$RELEASE_NAME/g" Sources/kaluza/version.swift
       - name: 🏗 swiftbuild
         run: |
           swift build -c release

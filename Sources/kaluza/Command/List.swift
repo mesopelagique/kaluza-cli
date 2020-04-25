@@ -16,13 +16,13 @@ struct List: ParsableCommand {
     var prod: Bool
     @Flag(name: [.long], help: "Display only the dependency tree for packages in devDependencies.")
     var dev: Bool
-    
+
     // @Flag(name: [.long], help: "Show more information")
     // var long: Bool
 
     @Flag(name: [.customShort("g"), .long], help: "List packages in the global install prefix instead of in the current project.")
     var global: Bool
-    
+
     @Flag(help: " Show information in JSON format.")
      var json: Bool
 
@@ -40,7 +40,7 @@ struct List: ParsableCommand {
             return componentURL
         }
     }
-    
+
     func run() {
         guard let componentURL = url else {
             if json {
@@ -50,11 +50,11 @@ struct List: ParsableCommand {
             }
             return
         }
-        
+
         guard let component = Component.read(from: componentURL) else {
             return
         }
-        
+
         var componentToDisplay = Component()
         if dev {
             componentToDisplay.devDependencies = component.devDependencies
@@ -83,5 +83,5 @@ struct List: ParsableCommand {
             }
         }
     }
-    
+
 }

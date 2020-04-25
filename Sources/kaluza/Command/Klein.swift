@@ -12,23 +12,23 @@ struct Klein: ParsableCommand {
 
     static let configuration = CommandConfiguration(abstract: "Install kaluza component")
     let path = "mesopelagique/Kaluza"
-    
+
     @Flag(help: "Prevents using 4dz binaries.")
     var noBin: Bool
-    
+
     @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
     var global: Bool
-    
+
     @Flag(name: [.customShort("f"), .long], help: "Force (for git command).")
     var force: Bool
-    
+
     @Flag(help: "Show debug information.")
     var verbose: Bool
-    
+
     var dependencyType: DependencyType {
         return .dev
     }
-    
+
     var url: URL? {
         if global {
             let url: URL = .globalComponent
@@ -47,7 +47,7 @@ struct Klein: ParsableCommand {
             return componentURL
         }
     }
-    
+
     func run() {
         Level.isDebug = verbose
         guard let componentURL = self.url else {
@@ -56,21 +56,20 @@ struct Klein: ParsableCommand {
         guard var component = Component.read(from: componentURL) else {
             return
         }
-        
+
         let binary = !noBin
         var dependencies: [Dependency]
-        
+
         var warnIfInstalled = false
-        
+
         dependencies = [component.addCommand(path: path, type: dependencyType)]
-        
+
         component.write(to: componentURL)
         warnIfInstalled = true // warn only if install one package
-        
+
         for dependency in dependencies {
             dependency.install(binary: binary, warnIfInstalled: warnIfInstalled, global: global, force: force)
         }
     }
-    
-}
 
+}
