@@ -66,7 +66,11 @@ struct List: ParsableCommand {
         }
         if json {
             let encoder: JSONEncoder = .component
-            log(.info, String(data: try! encoder.encode(componentToDisplay), encoding: .utf8) ?? "<failed to encode>")
+            do {
+                log(.info, String(data: try encoder.encode(componentToDisplay), encoding: .utf8) ?? "<failed to encode>")
+            } catch {
+                log(.error, "<failed to encode>")
+            }
         } else {
             if let dependencies = componentToDisplay.dependencies {
                 for dependency in dependencies {

@@ -11,9 +11,9 @@ import ArgumentParser
 struct Upgrade: ParsableCommand {
 
     static let configuration = CommandConfiguration(abstract: "Upgrade kaluza")
- 
+
     let url = URL(string: "https://mesopelagique.github.io/kaluza-cli/install.sh")!
-    
+
     func run() {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("install-kaluza.sh")
         try? FileManager.default.removeItem(at: tempURL)

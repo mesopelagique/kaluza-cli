@@ -37,7 +37,7 @@ extension URL {
     static var globalComponent: URL {
         let url = self.applicationSupportDirectory.appendingPathComponent("4D")
         if !url.isFileExists {
-            try! fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+            try! fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil) //swiftlint:disable:this force_try
         }
         return url.appendingPathComponent("kaluza.json")
     }
