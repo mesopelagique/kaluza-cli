@@ -12,7 +12,7 @@ struct Kaluza: ParsableCommand {
 
     static let configuration = CommandConfiguration(
         abstract: "Package manager for 4D.",
-        subcommands: [Init.self, Install.self, Add.self, Uninstall.self, List.self, Upgrade.self, Klein.self])
+        subcommands: [Init.self, Install.self, Add.self, Uninstall.self, List.self, Upgrade.self, Klein.self, Config.self, Shell.self])
 
     @Flag(name: [.customShort("v"), .long], help: "Show version.")
     var version: Bool
@@ -24,8 +24,4 @@ struct Kaluza: ParsableCommand {
             throw CleanExit.helpRequest()
         }
     }
-}
-
-enum KaluzaError: Error {
-    case invalid
 }

@@ -64,7 +64,11 @@ extension Dependency {
     func uninstall(global: Bool) -> Bool {
         let componentsURL: URL
         if global {
-            componentsURL = self.globalComponentsURL
+            if let path = Component.read(from: URL.globalComponent)?.getConfig(key: "globalPath") as? String, let configURL = URL(string: path) {
+                componentsURL = configURL
+            } else {
+                componentsURL = self.globalComponentsURL
+            }
         } else {
             componentsURL = self.componentsURL
         }

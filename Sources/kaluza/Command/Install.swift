@@ -161,7 +161,11 @@ extension Dependency {
     func install(binary: Bool, warnIfInstalled: Bool, global: Bool, force: Bool) {
         let componentsURL: URL
         if global {
-            componentsURL = self.globalComponentsURL
+            if let path = Component.read(from: URL.globalComponent)?.getConfig(key: "globalPath") as? String, let configURL = URL(string: path) {
+                componentsURL = configURL
+            } else {
+                componentsURL = self.globalComponentsURL
+            }
         } else {
             componentsURL = self.componentsURL
         }

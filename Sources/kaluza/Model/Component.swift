@@ -22,12 +22,15 @@ struct Component {
     var devDependencies: [Dependency]?
     // dependencies only useful for plugin
     var optionalDependencies: [Dependency]?
+
+    // configuration
+    var config: [String: AnyCodable]?
 }
 
 extension Component: Codable {
 
     enum CodingKeys: String, CodingKey {
-        case name, description, keywords, author, repository, dependencies, devDependencies, optionalDependencies
+        case name, description, keywords, author, repository, dependencies, devDependencies, optionalDependencies, config
     }
 
     init(from decoder: Decoder) throws {
@@ -62,6 +65,8 @@ extension Component: Codable {
             let map = try? values.decode([String: String?].self, forKey: .optionalDependencies)
             self.optionalDependencies = map?.map { key, value in Dependency(path: key, version: value) }
         }
+
+        self.config = try? values.decode([String: AnyCodable].self, forKey: .config)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -101,6 +106,9 @@ extension Component: Codable {
             } else {
                 try container.encode(Dictionary(uniqueKeysWithValues: dependencies.map { ($0.path, $0.version)}), forKey: .optionalDependencies)
             }
+        }
+        if let config = self.config {
+            try container.encode(config, forKey: .config)
         }
     }
 
