@@ -29,7 +29,7 @@ struct Init: ParsableCommand {
         var component = Component()
         component.dependencies = []
         component.name = findName(for: componentURL)
-        component.gitRemote = findGitRemove(for: componentURL)
+        component.gitRemote = Init.findGitRemote(for: componentURL)
         let noQuestion = yes || force
         if !noQuestion {
             // could ask user some information
@@ -86,7 +86,8 @@ struct Init: ParsableCommand {
             return directory.lastPathComponent
         }
     }
-    func findGitRemove(for url: URL) -> String? {
+
+    static func findGitRemote(for url: URL) -> String? {
         do {
             var arguments = ["remote"]
             var output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
