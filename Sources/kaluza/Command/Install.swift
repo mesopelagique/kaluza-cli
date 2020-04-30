@@ -109,7 +109,11 @@ extension Dependency {
 
     // XXX Use 4d app as global, maye ind another wayN
     var globalComponentsURL: URL {
+        #if os(Linux)
+        let componentsURL = URL(fileURLWithPath: "/opt/4d-server/").appendingPathComponent("Components", isDirectory: true)
+        #else
         let componentsURL = URL.appURL.appendingPathComponent("Contents", isDirectory: true).appendingPathComponent("Components", isDirectory: true)
+        #endif
         if !componentsURL.isFileExists {
             try? FileManager.default.createDirectory(at: componentsURL, withIntermediateDirectories: true, attributes: nil)
         }

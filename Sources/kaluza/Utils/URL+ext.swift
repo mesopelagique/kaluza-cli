@@ -51,7 +51,7 @@ extension URL {
         if url.isFileExists {
             return url
         }
-        if  let founds = try? Bash.execute(commandName: "mdfind", arguments: ["-name", "4D.app"]),
+        if let founds = try? Bash.execute(commandName: "mdfind", arguments: ["-name", "4D.app"]),
             !founds.isEmpty, let path = founds.split(separator: "\n").first {
             return URL(fileURLWithPath: String(path))
         }
