@@ -103,7 +103,7 @@ kaluza uninstall mesopelagique/formula_compose
 ## To build
 
 ```swift
-swift build -c Release
+swift build -c release
 ```
 
 ### On linux
