@@ -26,7 +26,11 @@ fi
 archive=$TMP/$archiveName
 curl -sL https://github.com/mesopelagique/kaluza-cli/releases/latest/download/$archiveName -o $archive
 
-unzip -q $archive -d $TMP/
+if [ "$OSTYPE" == "darwin"* ]; then  # Mac OSX
+  unzip -q $archive -d $TMP/
+else
+  tar -zxf $archive -C $TMP/
+fi
 
 binary=$TMP/.build/release/kaluza 
 
