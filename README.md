@@ -14,6 +14,14 @@ sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
 
 This will install `kaluza` to `/usr/local/bin`
 
+### On linux ubuntu
+
+Make sure to have unzip and zlip installed
+
+```
+sudo apt-get install unzip zlib1g
+```
+
 ## Usage
 
 ### Init a project
