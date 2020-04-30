@@ -14,8 +14,17 @@ fi
 
 cd $TMP
 
-archive=$TMP/kaluza.zip
-curl -sL https://github.com/mesopelagique/kaluza-cli/releases/latest/download/kaluza.zip -o $archive
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  archiveName=kaluza.tar.gz
+elif [[ "$OSTYPE" == "darwin"* ]]; then  # Mac OSX
+  archiveName=kaluza.zip
+else
+  echo "Unknown os type $OSTYPE"
+  archiveName=kaluza.tar.gz
+fi
+
+archive=$TMP/$archiveName
+curl -sL https://github.com/mesopelagique/kaluza-cli/releases/latest/download/$archiveName -o $archive
 
 unzip -q $archive -d $TMP/
 
@@ -23,7 +32,7 @@ binary=$TMP/.build/release/kaluza
 
 dst="/usr/local/bin"
 echo "Install into $dst/kaluza"
-rm -f $dst/kaluza
-cp $binary $dst/
+sudo rm -f $dst/kaluza
+sudo cp $binary $dst/
 
 rm -rf "$TMP"
