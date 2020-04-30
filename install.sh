@@ -14,9 +14,9 @@ fi
 
 cd $TMP
 
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
+if [ "$OSTYPE" == "linux-gnu" ]; then
   archiveName=kaluza.tar.gz
-elif [[ "$OSTYPE" == "darwin"* ]]; then  # Mac OSX
+elif [ "$OSTYPE" == "darwin"* ]; then  # Mac OSX
   archiveName=kaluza.zip
 else
   echo "Unknown os type $OSTYPE"
