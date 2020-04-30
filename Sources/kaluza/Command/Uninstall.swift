@@ -73,6 +73,7 @@ extension Dependency {
             componentsURL = self.componentsURL
         }
         let destinationURL = self.destinationURL(componentsURL: componentsURL)
+        // TODO remove gitsubmodule
         if destinationURL.isFileExists {
             do {
                 try FileManager.default.removeItem(at: destinationURL)
