@@ -16,10 +16,10 @@ This will install `kaluza` to `/usr/local/bin`
 
 ### On linux ubuntu
 
-Make sure to have unzip and zlip installed
+Make sure to have zlip installed
 
 ```
-sudo apt-get install unzip zlib1g
+sudo apt-get install zlib1g
 ```
 
 ## Usage
