@@ -21,7 +21,7 @@ final class Bash {
 
     static private func execute(command: String, arguments: [String] = []) throws -> String? {
         let process = Process()
-        process.launchPath = command
+        process.executableURL = URL(fileURLWithPath: command)
         process.arguments = arguments
 
         let pipe = Pipe()
