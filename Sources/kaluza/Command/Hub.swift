@@ -7,11 +7,10 @@
 
 import Foundation
 import ArgumentParser
-import GithubAPI
+import GitHubKit
 
 struct Hub: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Github information",
-                                                    subcommands: [Info.self, Open.self], defaultSubcommand: Info.self)
+    static let configuration = CommandConfiguration(abstract: "Github information", subcommands: [Info.self, Open.self], defaultSubcommand: Info.self)
 }
 
 extension Hub {
@@ -19,43 +18,40 @@ extension Hub {
 
         static let configuration = CommandConfiguration(abstract: "Install kaluza component")
 
-        func run() {
+        func run() throws {
             let component = Component.read(from: componentURL)
-            guard let remoteURLString = component?.gitRemote ?? Init.findGitRemote(for: componentURL), let remoteURL = URL(string: remoteURLString) else {
+            guard let remoteURLString = component?.gitRemote ?? Init.findGitRemote(for: componentURL) else {
                 return
             }
-            let semaphore = DispatchSemaphore(value: 0)
-            RepositoriesAPI().get(url: remoteURL) { (response, error) in
-                if let response = response {
-                    if let name = response.name {
-                        log(.info, "name: \(name)")
-                    }
-                    if let description = response.descriptionField {
-                        log(.info, "description: \(description)")
-                    }
-                    if let license = response.license?.name {
-                        log(.info, "license: \(license)")
-                    }
-                    if let topics = response.topics {
-                        log(.info, "topics: \(topics)")
-                    }
-                    if let count = response.forksCount {
-                        log(.info, "forks: \(count)")
-                    }
-                    if let count = response.stargazersCount {
-                        log(.info, "stargazers: \(count)")
-                    }
-                    if let count = response.watchersCount {
-                        log(.info, "watchers: \(count)")
-                    }
-                } else if let error = error {
-                    log(.error, "\(error)")
-                }
-                semaphore.signal()
-            }
-            semaphore.wait()
-        }
 
+            let config = GitHub.Config(username: "", token: "")
+            let github = try GitHub(config)
+            defer {
+                try? github.syncShutdown()
+            }
+            let repo = try Repo.query(on: github).get(url: remoteURLString).wait()
+
+            let name = repo.name
+            log(.info, "name: \(name)")
+            if let description = repo.repoDescription {
+                log(.info, "description: \(description)")
+            }
+            if let license = repo.license?.name {
+                log(.info, "license: \(license)")
+            }
+            if let topics = repo.topics {
+                log(.info, "topics: \(topics)")
+            }
+            if let count = repo.forksCount {
+                log(.info, "forks: \(count)")
+            }
+            if let count = repo.stargazersCount {
+                log(.info, "stargazers: \(count)")
+            }
+            if let count = repo.watchersCount {
+                log(.info, "watchers: \(count)")
+            }
+        }
     }
 
     struct Open: ParsableCommand {
@@ -74,9 +70,19 @@ extension Hub {
     }
 }
 
-extension RepositoriesAPI {
-    public func get(url: URL, completion: @escaping(RepositoryResponse?, Error?) -> Void) {
-        let path = "/repos\(url.path.replacingOccurrences(of: ".git", with: ""))"
-        self.get(path: path, completion: completion)
+extension QueryableProperty where QueryableType == Repo {
+
+    /// Get repo detail
+    public func get(url: String) throws -> EventLoopFuture<Repo> {
+        var path = URL(string: url)?.path ?? "" // TODO returned failed future instead
+        if path.hasSuffix(".git") {
+            path = String(path[path.startIndex..<path.index(path.endIndex, offsetBy: -4)])
+        }
+        if path.hasPrefix("/") {
+            path = String(path.dropFirst())
+        }
+        let cuts = path.split(separator: "/")
+        return try self.get(org: String(cuts[0]), repo: String(cuts[1]))
     }
 }
+

@@ -59,32 +59,6 @@ extension URL {
         return URL(fileURLWithPath: "/Applications/4D.app")
     }
 
-    /// download sync
-    func download(to destinationURL: URL) -> Bool {
-        var installed = false
-
-        let semaphore = DispatchSemaphore(value: 0)
-        let task = URLSession.shared.downloadTask(with: self) { localURL, urlResponse, error in
-            if let localURL = localURL, let urlResponse = urlResponse as? HTTPURLResponse, urlResponse.statusCode == 200 {
-                do {
-                    try FileManager.default.moveItem(at: localURL, to: destinationURL)
-                    installed = true
-                } catch {
-                    log(.error, "\(error)")
-                }
-            } else if let error = error {
-                log(.error, "\(error)")
-                log(.debug, "\(String(describing: urlResponse))")
-            } else {
-                log(.debug, "\(String(describing: urlResponse))")
-            }
-            semaphore.signal()
-        }
-        task.resume()
-        semaphore.wait()
-        return installed
-    }
-
     func unzip(to destinationURL: URL, delete: Bool = false) -> Bool {
         var unzipped = true
 
@@ -99,4 +73,36 @@ extension URL {
         }
         return unzipped
     }
+}
+
+import AsyncHTTPClient
+import NIO
+import NIOHTTP1
+import NIOSSL
+
+extension URL {
+
+    /// download sync
+    func download(to destinationURL: URL) -> Bool {
+        var installed = false
+        let httpClient = HTTPClient(eventLoopGroupProvider: .createNew) // XXX optimize using only one client
+        defer {
+            try? httpClient.syncShutdown()
+        }
+        do {
+            let request = try HTTPClient.Request(url: self.absoluteString)
+            let promise = httpClient.execute(request: request) // XXX maybe create HTTPClientResponseDelegate for big files and chunks
+            let response: HTTPClient.Response = try promise.wait()
+            if response.status == .ok {
+                if let body = response.body, let bytes = body.getBytes(at: 0, length: body.readableBytes) {
+                    try Data(bytes).write(to: destinationURL)
+                    installed = true
+                }
+            }
+        } catch {
+            log(.error, "\(error)")
+        }
+        return installed
+    }
+
 }

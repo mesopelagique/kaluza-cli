@@ -11,14 +11,14 @@ import ArgumentParser
 struct Shell: ParsableCommand {
 
     static let configuration = CommandConfiguration(abstract: "Interactive shell for test purpose")
-    
+
     func run() {
         print("Welcome to kaluza version \(Version.current)")
         print("Type help for assistance")
         var line = 1
         print(" \(line)> ", terminator: "")
         if var input = readLine() {
-            while(!input.isExitCmd) {
+            while !input.isExitCmd {
                 let arguments = input.split(separator: " ").map({String($0)})
                 do {
                     let command = try Kaluza.parseAsRoot(arguments)

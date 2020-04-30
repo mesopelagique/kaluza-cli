@@ -14,9 +14,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", .upToNextMajor(from: "0.9.11")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.5"),
-        .package(url: "https://github.com/serhii-londar/GithubAPI.git", from: "0.0.6")
+        .package(url: "https://github.com/phimage/GitHubKit.git", .branch("fix/license")),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.1.1")
     ],
-    targets: [
-        .target(name: "kaluza", dependencies: ["ZIPFoundation", "ArgumentParser", "GithubAPI"])
+    targets: [ 
+        .target(name: "kaluza", dependencies: ["ZIPFoundation", "ArgumentParser", "GitHubKit", "AsyncHTTPClient"])
     ]
 )
