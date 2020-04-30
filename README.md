@@ -9,18 +9,10 @@ Command line interface for [Kaluza](https://github.com/mesopelagique/Kaluza), in
 To install `kaluza`  
 
 ```bash
-curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
+sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
 ```
 
 This will install `kaluza` to `/usr/local/bin`
-
-### Troubleshooting 
-
-If you are unable to write to `/usr/local/bin` add `sudo`
-
-```bash
-sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
-```
 
 ## Usage
 
@@ -99,6 +91,20 @@ kaluza uninstall mesopelagique/formula_compose
 - `-g, --global`: allow to install into your 4D.app instead of current component.
   - For component useful only for dev purpose
   - `$HOME/Library/Application Support/4D/kaluza.json` file will save your dependencies.
+
+## To build
+
+```swift
+swift build -c Release
+```
+
+### On linux
+
+You need swift and also zlip, or ubuntu 18
+
+```
+sudo apt install zlib1g-dev
+```
 
 ## TODO
 
