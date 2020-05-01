@@ -9,7 +9,7 @@ Command line interface for [Kaluza](https://github.com/mesopelagique/Kaluza), in
 To install `kaluza`  
 
 ```bash
-sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | sh
+sudo curl -sL https://mesopelagique.github.io/kaluza-cli/install.sh | bash
 ```
 
 This will install `kaluza` to `/usr/local/bin`
