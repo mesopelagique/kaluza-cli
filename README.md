@@ -110,7 +110,7 @@ swift build -c release
 
 ### On linux
 
-You need swift and also zlip, or ubuntu 18
+You need swift and also zlip, on ubuntu 18
 
 ```
 sudo apt install zlib1g-dev
