@@ -22,6 +22,8 @@ Make sure to have zlip installed
 sudo apt-get install zlib1g
 ```
 
+and swift https://swift.org/download/#releases
+
 ## Usage
 
 ### Init a project
