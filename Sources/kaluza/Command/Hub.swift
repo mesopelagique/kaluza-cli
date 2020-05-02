@@ -85,4 +85,3 @@ extension QueryableProperty where QueryableType == Repo {
         return try self.get(org: String(cuts[0]), repo: String(cuts[1]))
     }
 }
-
