@@ -12,6 +12,7 @@ struct Dependency {
 
     var path: String
     var version: String?
+    var resolved: String?
 
     init(path: String) {
         let split = path.components(separatedBy: "@")
@@ -41,6 +42,32 @@ extension DependencyType {
             return false
         default:
             return true
+        }
+    }
+}
+
+extension Dependency {
+    private func usePath() -> Bool {
+        return version == nil && !useValues()
+    }
+    private func useVersion() -> Bool {
+        return version != nil && !useValues()
+    }
+    private func useValues() -> Bool {
+        return resolved != nil
+    }
+    func useVersionOrValues() -> Bool {
+        return version != nil || useValues()
+    }
+    mutating func setValues(_ values: [String: String]) {
+        self.version = values["version"]
+        self.resolved = values["resolved"]
+    }
+    var values: Any? {
+        if useValues() {
+            return ["version": version, "resolved": resolved]
+        } else {
+            return version
         }
     }
 }

@@ -73,6 +73,13 @@ extension URL {
         }
         return unzipped
     }
+
+    var toLockURL: URL {
+        var result = self.deletingPathExtension().deletingLastPathComponent()
+        result.appendPathComponent(lastPathComponent+"-lock")
+        result.appendPathExtension(self.pathExtension)
+        return result
+    }
 }
 
 import AsyncHTTPClient

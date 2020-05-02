@@ -25,12 +25,15 @@ struct Component {
 
     // configuration
     var config: [String: AnyCodable]?
+
+    // hash used for lock file
+    var hash: String?
 }
 
 extension Component: Codable {
 
     enum CodingKeys: String, CodingKey {
-        case name, description, keywords, author, repository, dependencies, devDependencies, optionalDependencies, config
+        case name, description, keywords, author, repository, dependencies, devDependencies, optionalDependencies, config, hash
     }
 
     init(from decoder: Decoder) throws {
@@ -42,31 +45,12 @@ extension Component: Codable {
         self.keywords = try? values.decode([String].self, forKey: .keywords)
         self.repository = try? values.decode(Repository.self, forKey: .repository)
 
-        do {
-            let strings = try values.decode([String].self, forKey: .dependencies)
-            self.dependencies = strings.map { Dependency(path: $0) }
-        } catch {
-            let map = try? values.decode([String: String?].self, forKey: .dependencies)
-            self.dependencies = map?.map { key, value in Dependency(path: key, version: value) }
-        }
-
-        do {
-            let strings = try values.decode([String].self, forKey: .devDependencies)
-            self.devDependencies = strings.map { Dependency(path: $0) }
-        } catch {
-            let map = try? values.decode([String: String?].self, forKey: .devDependencies)
-            self.devDependencies = map?.map { key, value in Dependency(path: key, version: value) }
-        }
-
-        do {
-            let strings = try values.decode([String].self, forKey: .optionalDependencies)
-            self.optionalDependencies = strings.map { Dependency(path: $0) }
-        } catch {
-            let map = try? values.decode([String: String?].self, forKey: .optionalDependencies)
-            self.optionalDependencies = map?.map { key, value in Dependency(path: key, version: value) }
-        }
+        self.dependencies = try? values.decodeDependencies(forKey: .dependencies)
+        self.devDependencies = try? values.decodeDependencies(forKey: .devDependencies)
+        self.optionalDependencies = try? values.decodeDependencies(forKey: .optionalDependencies)
 
         self.config = try? values.decode([String: AnyCodable].self, forKey: .config)
+        self.hash = try? values.decode(String.self, forKey: .hash)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -87,28 +71,19 @@ extension Component: Codable {
             try container.encode(repository, forKey: .repository)
         }
         if let dependencies = self.dependencies {
-            if dependencies.filter({ $0.version != nil }).isEmpty {
-                try container.encode(dependencies.map { $0.path }, forKey: .dependencies)
-            } else {
-                try container.encode(Dictionary(uniqueKeysWithValues: dependencies.map { ($0.path, $0.version)}), forKey: .dependencies)
-            }
+            try container.encode(dependencies, forKey: .dependencies)
         }
         if let dependencies = self.devDependencies {
-            if dependencies.filter({ $0.version != nil }).isEmpty {
-                try container.encode(dependencies.map { $0.path }, forKey: .devDependencies)
-            } else {
-                try container.encode(Dictionary(uniqueKeysWithValues: dependencies.map { ($0.path, $0.version)}), forKey: .devDependencies)
-            }
+            try container.encode(dependencies, forKey: .devDependencies)
         }
         if let dependencies = self.optionalDependencies {
-            if dependencies.filter({ $0.version != nil }).isEmpty {
-                try container.encode(dependencies.map { $0.path }, forKey: .optionalDependencies)
-            } else {
-                try container.encode(Dictionary(uniqueKeysWithValues: dependencies.map { ($0.path, $0.version)}), forKey: .optionalDependencies)
-            }
+            try container.encode(dependencies, forKey: .optionalDependencies)
         }
         if let config = self.config {
             try container.encode(config, forKey: .config)
+        }
+        if let hash = hash {
+            try container.encode(hash, forKey: .hash)
         }
     }
 
@@ -194,4 +169,38 @@ extension Component {
 struct Repository: Codable {
     var url: String
     var type: String
+}
+
+extension KeyedDecodingContainer  where K == Component.CodingKeys {
+    
+    fileprivate func decodeDependencies(forKey key: K) throws-> [Dependency] {
+        do {
+            let strings = try self.decode([String].self, forKey: key)
+            return strings.map { Dependency(path: $0) }
+        } catch {
+            let map = try self.decode([String: AnyCodable?].self, forKey: key)
+            return map.map { key, value in
+                var dependency = Dependency(path: key, version: nil)
+                if let version = value?.value as? String {
+                    dependency.version = version
+                }
+                else if let values = value?.value as? [String: String] {
+                    dependency.setValues(values)
+                }
+                return dependency
+            }
+        }
+    }
+    
+}
+
+extension KeyedEncodingContainer  where K == Component.CodingKeys {
+
+    fileprivate mutating func encode(_ dependencies: [Dependency], forKey key: K) throws {
+        if dependencies.filter({ $0.useVersionOrValues() }).isEmpty {
+            try self.encode(dependencies.map { $0.path }, forKey: key)
+        } else {
+            try self.encode(Dictionary(uniqueKeysWithValues: dependencies.map { ($0.path, AnyCodable($0.values))}), forKey: key)
+        }
+    }
 }
