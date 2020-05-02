@@ -23,12 +23,13 @@ struct Upgrade: ParsableCommand {
         }
         do {
             // TODO maybe process must be killed to be replaced
-            if let output = try Bash.execute(commandName: "sh", arguments: [tempURL.path]) {
+            if let output = try Bash.execute(commandName: "bash", arguments: [tempURL.path]) {
                 log(.info, output)
             }
         } catch {
             log(.error, "\(error)")
         }
+        try? FileManager.default.removeItem(at: tempURL)
     }
 
 }
