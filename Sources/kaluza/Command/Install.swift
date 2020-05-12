@@ -132,14 +132,32 @@ extension Dependency {
         }
         return componentsURL.appendingPathComponent(name).appendingPathExtension("4dbase")
     }
+    func gitModuleURL(url: URL) -> URL {
+        var rootURL = url.deletingLastPathComponent().deletingLastPathComponent()
+        rootURL = rootURL.appendingPathComponent(".git").appendingPathComponent("modules")
+        rootURL = rootURL.appendingPathComponent(url.deletingLastPathComponent().lastPathComponent).appendingPathComponent(url.lastPathComponent)
+        return rootURL
+    }
 
     var githubURL: URL {
         return URL(string: "https://github.com/\(path)")!// clean, remove !
     }
     var gitURL: URL {
-        return URL(string: "https://github.com/\(path).git")!// clean, remove !
-      }
-
+        var urlString = path
+        if isGithub {
+            urlString = "https://github.com/\(urlString)"
+        }
+        if !path.hasSuffix(".git") {
+            urlString = "\(urlString).git"
+        }
+        return URL(string: urlString)! // clean, remove !
+    }
+    var isGithub: Bool {
+        return !path.hasPrefix("http") && !path.hasPrefix("git@")
+    }
+    var binaryAvailable: Bool {
+        return isGithub
+    }
     func binaryName(withResources: Bool, withVersion: String? = nil) -> String {
         if withResources {
             if let version = withVersion {
@@ -181,7 +199,7 @@ extension Dependency {
 
         var installed = false
 
-        if binary {
+        if binary && binaryAvailable {
             let binaryURL = self.binaryURL(version: version, withResources: false)
             let destinationArchiveURL = componentsURL.appendingPathComponent(self.binaryName(withResources: false))
             if destinationArchiveURL.isFileExists {
@@ -248,7 +266,7 @@ extension Dependency {
                     arguments = ["clone", "-q", "\(gitURL)", "\(destinationURL.path)"]
                 }
                 if force {
-                    arguments.insert("--force", at: 2)
+                    arguments.insert("--force", at: submodule ? 3: 2)
                 }
                 do {
                     let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""

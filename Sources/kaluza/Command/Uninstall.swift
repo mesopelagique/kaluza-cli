@@ -72,8 +72,35 @@ extension Dependency {
         } else {
             componentsURL = self.componentsURL
         }
-        let destinationURL = self.destinationURL(componentsURL: componentsURL)
         // TODO remove gitsubmodule
+        let destinationURL = self.destinationURL(componentsURL: componentsURL)
+        if !global {
+            let moduleURL = self.gitModuleURL(url: destinationURL)
+            if moduleURL.isFileExists {
+                var arguments: [String] = ["rm", "-q", "-f", "Components/\(destinationURL.lastPathComponent)"]
+                do {
+                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
+                    log(.debug, output)
+                    log(.info, "\(path) uninstalled working tree git submodule")
+                } catch {
+                    log(.error, "\(error)")
+                }
+                do {
+                    try FileManager.default.removeItem(at: moduleURL)
+                    log(.info, "Removed: \(moduleURL.path)")
+                } catch {
+                    log(.error, "\(error)")
+                }
+                arguments = ["submodule", "deinit", "-q", "-f", "Components/\(destinationURL.lastPathComponent)"] // must be relative
+                do {
+                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
+                    log(.debug, output)
+                    log(.info, "\(path) uninstalled git submodule")
+                } catch {
+                    log(.error, "\(error)")
+                }
+            }
+        }
         if destinationURL.isFileExists {
             do {
                 try FileManager.default.removeItem(at: destinationURL)

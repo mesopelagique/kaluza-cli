@@ -16,10 +16,13 @@ struct Dependency {
 
     init(path: String) {
         let split = path.components(separatedBy: "@")
-        self.path = split.first!
-
-        if split.count > 1 {
-            self.version = split[1]
+        if path.hasPrefix("git@") { // ignore version for git url
+            self.path = path
+        } else {
+            self.path = split.first!
+            if split.count > 1 {
+                self.version = split[1]
+            }
         }
     }
 
