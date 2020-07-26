@@ -13,13 +13,13 @@ struct Uninstall: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Uninstall dependencies")
 
     @Flag(name: [.customShort("g"), .long], help: "Uninstall from global storage.")
-    var global: Bool
+    var global: Bool = false
 
     @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
     var path: String
 
     @Flag(help: "Show debug information.")
-    var verbose: Bool
+    var verbose: Bool = false
 
     var url: URL? {
         if global {

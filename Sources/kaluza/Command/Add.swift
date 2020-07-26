@@ -17,19 +17,19 @@ struct Add: ParsableCommand {
     var path: String
 
     @Flag(name: [.customShort("D"), .long], help: "Save as dev dependencies.")
-    var saveDev: Bool
+    var saveDev: Bool = false
     @Flag(name: [.customShort("O"), .long], help: "Save as optional dependencies.")
-    var saveOptional: Bool
+    var saveOptional: Bool = false
 
     var dependencyType: DependencyType {
         return saveDev ? .dev: (self.saveOptional ? .optional : .standard)
     }
 
     @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
-    var global: Bool
+    var global: Bool = false
 
     @Flag(help: "Show debug information.")
-    var verbose: Bool
+    var verbose: Bool = false
 
     var url: URL? {
         if global {

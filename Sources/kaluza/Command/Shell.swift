@@ -32,7 +32,7 @@ struct Shell: ParsableCommand {
                 } else {
                     let arguments = input.split(separator: " ").map({String($0)})
                     do {
-                        let command = try Kaluza.parseAsRoot(arguments)
+                        var command = try Kaluza.parseAsRoot(arguments)
                         try command.run()
                     } catch {
                         log(.info, Kaluza.fullMessage(for: error))

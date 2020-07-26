@@ -13,26 +13,26 @@ struct Install: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Install dependencies")
 
     @Flag(help: "Prevents using 4dz binaries.")
-    var noBin: Bool
+    var noBin: Bool = false
     @Flag(help: "Prevents saving to dependencies.")
-    var noSave: Bool
+    var noSave: Bool = false
 
     @Flag(name: [.customShort("D"), .long], help: "Save as dev dependencies.")
-    var saveDev: Bool
+    var saveDev: Bool = false
     @Flag(name: [.customShort("O"), .long], help: "Save as optional dependencies.")
-    var saveOptional: Bool
+    var saveOptional: Bool = false
 
     @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
-    var global: Bool
+    var global: Bool = false
 
     @Flag(name: [.customShort("f"), .long], help: "Force (for git command).")
-    var force: Bool
+    var force: Bool = false
 
     @Argument(help: "The dependency path: <orga>/<repo>(@<version).")
     var path: String?
 
     @Flag(help: "Show debug information.")
-    var verbose: Bool
+    var verbose: Bool = false
 
     var dependencyType: DependencyType {
         return saveDev ? .dev: (self.saveOptional ? .optional : .standard)

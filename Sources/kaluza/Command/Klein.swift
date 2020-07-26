@@ -14,16 +14,16 @@ struct Klein: ParsableCommand {
     let path = "mesopelagique/Kaluza"
 
     @Flag(help: "Prevents using 4dz binaries.")
-    var noBin: Bool
+    var noBin: Bool = false
 
     @Flag(name: [.customShort("g"), .long], help: "Install to a global storage.")
-    var global: Bool
+    var global: Bool = false
 
     @Flag(name: [.customShort("f"), .long], help: "Force (for git command).")
-    var force: Bool
+    var force: Bool = false
 
     @Flag(help: "Show debug information.")
-    var verbose: Bool
+    var verbose: Bool = false
 
     var dependencyType: DependencyType {
         return .dev

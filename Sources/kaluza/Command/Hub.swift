@@ -16,7 +16,7 @@ struct Hub: ParsableCommand {
 extension Hub {
     struct Info: ParsableCommand {
 
-        static let configuration = CommandConfiguration(abstract: "Install kaluza component")
+        static let configuration = CommandConfiguration(abstract: "Provide info about repository on github.")
 
         func run() throws {
             let component = Component.read(from: componentURL)
@@ -56,7 +56,7 @@ extension Hub {
 
     struct Open: ParsableCommand {
 
-        static let configuration = CommandConfiguration(abstract: "Install kaluza component")
+        static let configuration = CommandConfiguration(abstract: "Open project github url in your default web browser.")
 
         func run() throws {
             let component = Component.read(from: componentURL)
@@ -68,6 +68,7 @@ extension Hub {
         }
 
     }
+
 }
 
 extension QueryableProperty where QueryableType == Repo {

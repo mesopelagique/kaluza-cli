@@ -13,18 +13,18 @@ struct List: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "List added components")
 
     @Flag(name: [.long], help: "Display only the dependency tree for packages in dependencies.")
-    var prod: Bool
+    var prod: Bool = false
     @Flag(name: [.long], help: "Display only the dependency tree for packages in devDependencies.")
-    var dev: Bool
+    var dev: Bool = false
 
     // @Flag(name: [.long], help: "Show more information")
     // var long: Bool
 
     @Flag(name: [.customShort("g"), .long], help: "List packages in the global install prefix instead of in the current project.")
-    var global: Bool
+    var global: Bool = false
 
     @Flag(help: " Show information in JSON format.")
-     var json: Bool
+     var json: Bool = false
 
     var url: URL? {
         if global {

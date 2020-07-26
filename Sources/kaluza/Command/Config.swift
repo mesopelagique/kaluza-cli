@@ -41,7 +41,7 @@ extension Config {
         static let configuration = CommandConfiguration(abstract: "Sets the config key to the value.")
 
         @Flag(name: [.customShort("g"), .long], help: "Edit global configuration.")
-        var global: Bool
+        var global: Bool = false
 
         @Argument(help: "The key")
         var key: String
@@ -77,7 +77,7 @@ extension Config {
         static let configuration = CommandConfiguration(abstract: "Echo the config value to stdout.")
 
         @Flag(name: [.customShort("g"), .long], help: "Show value rom global configuration.")
-        var global: Bool
+        var global: Bool = false
 
         @Argument(help: "The key")
         var key: String
@@ -96,7 +96,7 @@ extension Config {
         static let configuration = CommandConfiguration(abstract: "Deletes the key from configuration file.")
 
         @Flag(name: [.customShort("g"), .long], help: "Show value rom global configuration.")
-        var global: Bool
+        var global: Bool = false
 
         @Argument(help: "The key")
         var key: String
@@ -115,11 +115,11 @@ extension Config {
 
         static let configuration = CommandConfiguration(abstract: "Echo the config value to stdout.")
 
-        @Flag(name: [.customShort("g"), .long], help: "Show value rom global configuration.")
-        var global: Bool
+        @Flag(name: [.customShort("g"), .long], help: "Show value from global configuration.")
+        var global: Bool = false
 
         @Flag(help: "Display in JSON format.")
-        var json: Bool
+        var json: Bool = false
 
         func doRun(componentURL: URL) {
             guard let component = Component.read(from: componentURL) else {
@@ -160,7 +160,7 @@ extension Config {
         static let configuration = CommandConfiguration(abstract: "Edit with system editor.")
 
         @Flag(name: [.customShort("g"), .long], help: "Edit global configuration.")
-        var global: Bool
+        var global: Bool = false
 
         func doRun(componentURL: URL) throws {
             _ = try Bash.execute(commandName: "/usr/bin/open", arguments: [componentURL.path])

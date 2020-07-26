@@ -14,11 +14,11 @@ struct Init: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Initialize by creating a component.json file")
 
     @Flag(name: [.short, .long], help: "Generate it without having it ask any questions.")
-    var force: Bool
+    var force: Bool = false
     @Flag(name: [.short, .long], help: "Generate it without having it ask any questions.")
-    var yes: Bool
+    var yes: Bool = false
     @Flag(help: "Show debug information.")
-    var verbose: Bool
+    var verbose: Bool = false
 
     func run() {
         Level.isDebug = verbose
