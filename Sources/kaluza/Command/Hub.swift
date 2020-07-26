@@ -89,7 +89,7 @@ extension Hub {
             guard let componentURL = Config.url(global: true) else {
                 return
             }
-            if !FileManager.default.fileExists(atPath: componentURL.absoluteString) {
+            if !FileManager.default.fileExists(atPath: componentURL.path) {
                 Component().write(to: componentURL)
             }
             guard var component = Component.read(from: componentURL) else {
@@ -138,6 +138,9 @@ extension Hub {
         @Argument(help: "The GitHub token or password to connect.")
         var token: String?
 
+        @Argument(help: "The GitHub org to push if no remote defined, and do not want to push on user account.")
+        var org: String?
+
         //--access <public|private>
 
         func run() throws {
@@ -148,7 +151,8 @@ extension Hub {
             var remoteURLString = component.gitRemote
             
             // CHECK GIT
-            if !(try Bash.run(commandName: "git", arguments: ["status"]).isSuccess) {
+            let status = try Bash.run(commandName: "git", arguments: ["status"])
+            if !status.isSuccess {
                 if !self.yes {
                     print("Not a git repository yet. Create one? (yes, no)")
                     if let confirm = readLine() {
@@ -157,8 +161,28 @@ extension Hub {
                             return
                         }
                     }
-                    let status = try Bash.execute(commandName: "git", arguments: ["init"])
+                    var status = try Bash.execute(commandName: "git", arguments: ["init"])
                     log(.debug, "\(status ?? "")")
+                    status = try Bash.execute(commandName: "git", arguments: ["add", "."])
+                    log(.debug, "\(status ?? "")")
+                    status = try Bash.execute(commandName: "git", arguments: ["commit", "-m", "Initial commit"])
+                    log(.debug, "\(status ?? "")")
+                }
+            } else {
+                if status.output?.contains("No commits yet") ?? false { // XXX maybe do a git log instead, because langue and message could change
+                    if !self.yes {
+                        print("No commit yet? Commit all? (yes, no)")
+                        if let confirm = readLine() {
+                            if confirm != "yes" && confirm != "y" && !confirm.isEmpty {
+                                print("Aborted")
+                                return
+                            }
+                        }
+                        var status = try Bash.execute(commandName: "git", arguments: ["add", "."])
+                        log(.debug, "\(status ?? "")")
+                        status = try Bash.execute(commandName: "git", arguments: ["commit", "-m", "Initial commit"])
+                        log(.debug, "\(status ?? "")")
+                    }
                 }
             }
             // CHECK GIT file
@@ -171,7 +195,6 @@ extension Hub {
                     if let remoteURLString = remoteURLString {
                         _ = try Bash.execute(commandName: "git", arguments: ["remote", "add", remote, remoteURLString])
                     }
-                    // TODO we need to create remote
                 } else {
                     // look for github in priority
                     let remoteLines = remotes.split(separator: "\n")
@@ -187,13 +210,13 @@ extension Hub {
             }
 
             // CHECK GITHUB
-            let config = GitHub.Config.with(user: self.user, token: self.token)
+            let config = GitHub.Config.with(user: self.user, token: self.token) // XXX user from url?
             let github = try GitHub(config)
             defer {
                 try? github.syncShutdown()
             }
             do {
-                let repo = try Repo.query(on: github).get(url: remoteURLString!).wait()
+                let repo = try Repo.query(on: github).get(url: remoteURLString ?? "").wait() // TODO if no url make one before
                 log(.debug, "Remote repo found: \(repo)")
             } catch GitHub.Error.notFound(_) {
                 if !self.yes {
@@ -205,8 +228,25 @@ extension Hub {
                         }
                     }
                 }
-                log(.error, "Not yet implemented")
-                
+                var repoName = component.name
+                var org = self.org
+                if let remoteURLString = remoteURLString, let remoteURL = URL(string: remoteURLString), let remoteURLComp = URLComponents(url: remoteURL, resolvingAgainstBaseURL: false) {
+                    let pathCompo = remoteURLComp.path.split(separator: "/")
+
+                    org = String(pathCompo[0])
+                    repoName = String(pathCompo[1])
+                    if config.username == org {
+                        org = nil
+                    }
+                }
+  
+                if let repoName = repoName {
+                    let githubRepo: Repo? = try Repo.query(on: github).create(name: repoName, org: org).wait()
+
+                    if remoteURLString == nil, let remoteURL = githubRepo?.url {
+                        _ = try Bash.execute(commandName: "git", arguments: ["remote", "add", remote, remoteURL])
+                    }
+                }
             } catch {
                 log(.error, "Remote name for github: \(error)")
                 print("Aborted")
@@ -214,6 +254,8 @@ extension Hub {
             }
 
             // PUSH
+            _ = try Bash.execute(commandName: "git", arguments: ["config", "user.name", config.username])
+            //_ = try Bash.execute(commandName: "git", arguments: ["config", "user.name", config.username])
             _ = try Bash.execute(commandName: "git", arguments: ["push", remote])
         }
 
@@ -227,19 +269,11 @@ extension GitHub.Config {
         let env = ProcessInfo.processInfo.environment
         var username = user ?? ""
         var token = token ?? ""
-
-        // try with env var
-        if username.isEmpty, let user = env["GITHUB_USER"] {
-            username = user
-        }
-        if token.isEmpty, let pass = env["GITHUB_TOKEN"] ?? env["GITHUB_PASSWORD"] {
-            token = pass
-        }
- 
+        
         // try global config from login
         if token.isEmpty || username.isEmpty {
             if let componentURL = Config.url(global: true),
-                FileManager.default.fileExists(atPath: componentURL.absoluteString),
+                FileManager.default.fileExists(atPath: componentURL.path),
                 let component = Component.read(from: componentURL) {
                 if username.isEmpty {
                     username = component.getConfig(key: "hub.user") as? String ?? ""
@@ -248,6 +282,14 @@ extension GitHub.Config {
                     token = component.getConfig(key: "hub.token") as? String ?? ""
                 }
             }
+        }
+
+        // try with env var
+        if username.isEmpty, let user = env["GITHUB_USER"] {
+            username = user
+        }
+        if token.isEmpty, let pass = env["GITHUB_TOKEN"] ?? env["GITHUB_PASSWORD"] {
+            token = pass
         }
 
         return GitHub.Config(username: username, token: token)
@@ -269,18 +311,18 @@ extension QueryableProperty where QueryableType == Repo {
         return try self.get(org: String(cuts[0]), repo: String(cuts[1]))
     }
 
-    /*public func create(name: String) throws -> EventLoopFuture<Repo?> {
-        let message = Repo.Post(name: name)
-        return try self.post(path: "/user/repos", post: message)
+    public func create(name: String, org: String?) throws -> EventLoopFuture<Repo?> {
+        if let org = org {
+            let message = Repo.Post(name: name, owner: Owner.Post(name: org))
+            return try github.post(path: "orgs/\(org)/repos", post: message)
+        } else {
+            let message = Repo.Post(name: name)
+            return try github.post(path: "user/repos", post: message)
+        }
     }
-    
-    public func create(name: String, org: String) throws -> EventLoopFuture<Repo?> {
-        let message = Repo.Post(name: name, owner: Owner.Post(name: org))
-         return try self.post(path: " /orgs/\(org)/repos", post: message)
-     }*/
 
 }
-/*
+
 extension Repo {
     public struct Post: Codable {
         public internal(set) var name: String
@@ -293,4 +335,3 @@ extension Owner {
         public internal(set) var name: String
     }
 }
-*/

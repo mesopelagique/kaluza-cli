@@ -51,7 +51,7 @@ extension Config {
 
         func doRun(componentURL: URL) {
             if global {
-                if !FileManager.default.fileExists(atPath: componentURL.absoluteString) {
+                if !FileManager.default.fileExists(atPath: componentURL.path) {
                     Component().write(to: componentURL)
                 }
             }
