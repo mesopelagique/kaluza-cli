@@ -269,7 +269,7 @@ extension Dependency {
                     arguments.insert("--force", at: submodule ? 3: 2)
                 }
                 do {
-                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
+                    let output = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
                     log(.debug, output)
                     if submodule {
                         log(.info, "\(path) installed as gitsubmodule")
@@ -283,15 +283,4 @@ extension Dependency {
         }
 
     }
-}
-
-func gitPath() -> String {
-    do {
-        var output = try Bash.execute(commandName: "/usr/bin/which", arguments: ["git"]) ?? ""
-        output.removeLast() // remove \n
-        return output
-    } catch {
-        log(.error, "\(error)")
-    }
-    return "git"
 }

@@ -79,7 +79,7 @@ extension Dependency {
             if moduleURL.isFileExists {
                 var arguments: [String] = ["rm", "-q", "-f", "Components/\(destinationURL.lastPathComponent)"]
                 do {
-                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
+                    let output = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
                     log(.debug, output)
                     log(.info, "\(path) uninstalled working tree git submodule")
                 } catch {
@@ -93,7 +93,7 @@ extension Dependency {
                 }
                 arguments = ["submodule", "deinit", "-q", "-f", "Components/\(destinationURL.lastPathComponent)"] // must be relative
                 do {
-                    let output = try Bash.execute(commandName: gitPath(), arguments: arguments) ?? ""
+                    let output = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
                     log(.debug, output)
                     log(.info, "\(path) uninstalled git submodule")
                 } catch {

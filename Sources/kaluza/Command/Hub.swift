@@ -10,7 +10,7 @@ import ArgumentParser
 import GitHubKit
 
 struct Hub: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Github information", subcommands: [Info.self, Open.self], defaultSubcommand: Info.self)
+    static let configuration = CommandConfiguration(abstract: "Github information", subcommands: [Info.self, Open.self, Push.self], defaultSubcommand: Info.self)
 }
 
 extension Hub {
@@ -60,11 +60,97 @@ extension Hub {
 
         func run() throws {
             let component = Component.read(from: componentURL)
-            guard let remoteURLString = component?.gitRemote ?? Init.findGitRemote(for: componentURL)else {
+            guard let remoteURLString = component?.gitRemote ?? Init.findGitRemote(for: componentURL) else {
                 return
             }
 
             _ = try Bash.execute(commandName: "/usr/bin/open", arguments: [remoteURLString])
+        }
+
+    }
+
+    struct Push: ParsableCommand {
+
+        static let configuration = CommandConfiguration(abstract: "Open project github url in your default web browser.")
+
+        @Flag(name: [.customShort("y"), .long], help: "Automatically repond yes to all interactive quetion.")
+        var yes: Bool = false
+
+        @Argument(help: "The remote name (origin).")
+        var remote: String = "origin"
+
+        func run() throws {
+            let component = Component.read(from: componentURL)
+            var remoteURLString = component?.gitRemote
+            
+            // CHECK GIT
+            if !(try Bash.run(commandName: "git", arguments: ["status"]).isSuccess) {
+                if !self.yes {
+                    print("Not a git repository yet. Create one? (yes, no)")
+                    if let confirm = readLine() {
+                        if confirm != "yes" && confirm != "y" && !confirm.isEmpty {
+                            print("Aborted")
+                            return
+                        }
+                    }
+                    let status = try Bash.execute(commandName: "git", arguments: ["init"])
+                    log(.debug, "\(status ?? "")")
+                }
+            }
+            // CHECK GIT file
+            // TODO there is no gitignore, no gitattribute, wnt to create ?
+            
+            // CHECK REMOTE
+            var remote = self.remote
+            if let remotes = try Bash.execute(commandName: "git", arguments: ["remote", "-v"]) {
+                if remotes.isEmpty {
+                    if let remoteURLString = remoteURLString {
+                        _ = try Bash.execute(commandName: "git", arguments: ["remote", "add", remote, remoteURLString])
+                    }
+                    // TODO we need to create remote
+                } else {
+                    // look for github in priority
+                    let remoteLines = remotes.split(separator: "\n")
+                    for remoteLine in remoteLines {
+                        if remoteLine.contains("github.com"), let tab = remoteLine.firstIndex(of: "\t") {
+                            remote = String(remoteLine[remoteLine.startIndex..<tab])
+                            remoteURLString = String(remoteLine[remoteLine.index(tab, offsetBy: 1)..<remoteLine.lastIndex(of: " ")!])
+                            log(.debug, "Remote name for github: \(remote)")
+                            break
+                        }
+                    }  // maybe if no github create even if there is other ?
+                }
+            }
+
+            // CHECK GITHUB
+            let config = GitHub.Config(username: "", token: "")
+            let github = try GitHub(config)
+            defer {
+                try? github.syncShutdown()
+            }
+            do {
+                let repo = try Repo.query(on: github).get(url: remoteURLString!).wait()
+                log(.debug, "Remote repo found: \(repo)")
+            } catch GitHub.Error.notFound(_) {
+                if !self.yes {
+                    log(.info, "Remote repository not available. Create it? (yes, no)")
+                    if let confirm = readLine() {
+                        if confirm != "yes" && confirm != "y" && !confirm.isEmpty {
+                            print("Aborted")
+                            return
+                        }
+                    }
+                }
+                log(.error, "Not yet implemented")
+                
+            } catch {
+                log(.error, "Remote name for github: \(error)")
+                print("Aborted")
+                return
+            }
+
+            // PUSH
+            _ = try Bash.execute(commandName: "git", arguments: ["push", remote])
         }
 
     }
