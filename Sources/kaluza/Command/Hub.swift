@@ -123,7 +123,6 @@ extension Hub {
         
         static let configuration = CommandConfiguration(abstract: "Push project to github.")
 
-        @Flag(name: [.customShort("y"), .long], help: "Automatically repond yes to all interactive quetion.")
         @Flag(name: [.customShort("y"), .long], help: "Automatically respond yes to all interactive questions.")
         var yes: Bool = false
         
