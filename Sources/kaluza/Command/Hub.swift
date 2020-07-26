@@ -10,7 +10,7 @@ import ArgumentParser
 import GitHubKit
 
 struct Hub: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Github information", subcommands: [Info.self, Open.self, Push.self], defaultSubcommand: Info.self)
+    static let configuration = CommandConfiguration(abstract: "Github information", subcommands: [Info.self, Login.self, Open.self, Push.self], defaultSubcommand: Info.self)
 }
 
 extension Hub {
@@ -18,13 +18,19 @@ extension Hub {
 
         static let configuration = CommandConfiguration(abstract: "Provide info about repository on github.")
 
+        @Argument(help: "The GitHub user to connect.")
+        var user: String?
+        
+        @Argument(help: "The GitHub token or password to connect.")
+        var token: String?
+
         func run() throws {
             let component = Component.read(from: componentURL)
             guard let remoteURLString = component?.gitRemote ?? Init.findGitRemote(for: componentURL) else {
                 return
             }
 
-            let config = GitHub.Config(username: "", token: "")
+            let config = GitHub.Config.with(user: self.user, token: self.token)
             let github = try GitHub(config)
             defer {
                 try? github.syncShutdown()
@@ -68,20 +74,79 @@ extension Hub {
         }
 
     }
+    
+    struct Login: ParsableCommand {
+        
+        static let configuration = CommandConfiguration(abstract: "Save user and token for other commands.")
+        
+        @Argument(help: "The GitHub user to connect.")
+        var user: String?
+        
+        @Argument(help: "The GitHub token or password to connect.")
+        var token: String?
+        
+        func run() throws {
+            guard let componentURL = Config.url(global: true) else {
+                return
+            }
+            if !FileManager.default.fileExists(atPath: componentURL.absoluteString) {
+                Component().write(to: componentURL)
+            }
+            guard var component = Component.read(from: componentURL) else {
+                return
+            }
+            var hubUser = user
+            if user == nil {
+                print("Username:")
+                if let input = readLine() {
+                    hubUser = input
+                }
+            }
+            var hubToken = token
+            if hubToken == nil {
+                print("Token or password:")
+                if let input = readLine() {
+                    hubToken = input
+                }
+            }
+            if let hubUser = hubUser {
+                component.setConfig(key: "hub.user", value: hubUser)
+            }
+            if let hubToken = hubToken {
+                component.setConfig(key: "hub.token", value: hubToken)
+            }
+            component.write(to: componentURL)
+        }
+    }
 
     struct Push: ParsableCommand {
-
-        static let configuration = CommandConfiguration(abstract: "Open project github url in your default web browser.")
+        
+        static let configuration = CommandConfiguration(abstract: "Push project to github.")
 
         @Flag(name: [.customShort("y"), .long], help: "Automatically repond yes to all interactive quetion.")
+        @Flag(name: [.customShort("y"), .long], help: "Automatically respond yes to all interactive questions.")
         var yes: Bool = false
-
-        @Argument(help: "The remote name (origin).")
+        
+        @Argument(help: "The remote name (by default origin if no remote defied).")
         var remote: String = "origin"
+        
+        @Argument(help: "The GitHub hostname to default to instead of github.com.")
+        var host: String = "github.com"
+
+        @Argument(help: "The GitHub user to connect.")
+        var user: String?
+        
+        @Argument(help: "The GitHub token or password to connect.")
+        var token: String?
+
+        //--access <public|private>
 
         func run() throws {
-            let component = Component.read(from: componentURL)
-            var remoteURLString = component?.gitRemote
+            guard let component = Component.read(from: componentURL) else {
+                log(.error, "Please do a kaluza init before.")
+                return
+            }
+            var remoteURLString = component.gitRemote
             
             // CHECK GIT
             if !(try Bash.run(commandName: "git", arguments: ["status"]).isSuccess) {
@@ -112,7 +177,7 @@ extension Hub {
                     // look for github in priority
                     let remoteLines = remotes.split(separator: "\n")
                     for remoteLine in remoteLines {
-                        if remoteLine.contains("github.com"), let tab = remoteLine.firstIndex(of: "\t") {
+                        if remoteLine.contains(self.host), let tab = remoteLine.firstIndex(of: "\t") {
                             remote = String(remoteLine[remoteLine.startIndex..<tab])
                             remoteURLString = String(remoteLine[remoteLine.index(tab, offsetBy: 1)..<remoteLine.lastIndex(of: " ")!])
                             log(.debug, "Remote name for github: \(remote)")
@@ -123,7 +188,7 @@ extension Hub {
             }
 
             // CHECK GITHUB
-            let config = GitHub.Config(username: "", token: "")
+            let config = GitHub.Config.with(user: self.user, token: self.token)
             let github = try GitHub(config)
             defer {
                 try? github.syncShutdown()
@@ -157,6 +222,39 @@ extension Hub {
 
 }
 
+extension GitHub.Config {
+    
+    static fileprivate func with(user: String?, token: String?) -> GitHub.Config {
+        let env = ProcessInfo.processInfo.environment
+        var username = user ?? ""
+        var token = token ?? ""
+
+        // try with env var
+        if username.isEmpty, let user = env["GITHUB_USER"] {
+            username = user
+        }
+        if token.isEmpty, let pass = env["GITHUB_TOKEN"] ?? env["GITHUB_PASSWORD"] {
+            token = pass
+        }
+ 
+        // try global config from login
+        if token.isEmpty || username.isEmpty {
+            if let componentURL = Config.url(global: true),
+                FileManager.default.fileExists(atPath: componentURL.absoluteString),
+                let component = Component.read(from: componentURL) {
+                if username.isEmpty {
+                    username = component.getConfig(key: "hub.user") as? String ?? ""
+                }
+                if token.isEmpty {
+                    token = component.getConfig(key: "hub.token") as? String ?? ""
+                }
+            }
+        }
+
+        return GitHub.Config(username: username, token: token)
+    }
+}
+
 extension QueryableProperty where QueryableType == Repo {
 
     /// Get repo detail
@@ -171,4 +269,29 @@ extension QueryableProperty where QueryableType == Repo {
         let cuts = path.split(separator: "/")
         return try self.get(org: String(cuts[0]), repo: String(cuts[1]))
     }
+
+    /*public func create(name: String) throws -> EventLoopFuture<Repo?> {
+        let message = Repo.Post(name: name)
+        return try self.post(path: "/user/repos", post: message)
+    }
+    
+    public func create(name: String, org: String) throws -> EventLoopFuture<Repo?> {
+        let message = Repo.Post(name: name, owner: Owner.Post(name: org))
+         return try self.post(path: " /orgs/\(org)/repos", post: message)
+     }*/
+
 }
+/*
+extension Repo {
+    public struct Post: Codable {
+        public internal(set) var name: String
+        public internal(set) var owner: Owner.Post?
+    }
+}
+
+extension Owner {
+    public struct Post: Codable {
+        public internal(set) var name: String
+    }
+}
+*/

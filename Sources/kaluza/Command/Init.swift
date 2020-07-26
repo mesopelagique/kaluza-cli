@@ -90,14 +90,16 @@ struct Init: ParsableCommand {
     static func findGitRemote(for url: URL) -> String? {
         do {
             var arguments = ["remote"]
-            var output = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
-            log(.debug, output)
-            if !output.isEmpty {
-                arguments = ["remote", "get-url", output.replacingOccurrences(of: "\n", with: "")]
-                output = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
-                log(.debug, output)
-                if output.contains("http") {
-                    return output.replacingOccurrences(of: "\n", with: "")
+            let outputs = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
+            log(.debug, outputs)
+            for output in outputs.split(separator: "\n") {
+                if !output.isEmpty {
+                    arguments = ["remote", "get-url", output.replacingOccurrences(of: "\n", with: "")]
+                    let output2 = try Bash.execute(commandName: "git", arguments: arguments) ?? ""
+                    log(.debug, output2)
+                    if output2.contains("http") {
+                        return output2.replacingOccurrences(of: "\n", with: "")
+                    }
                 }
             }
         } catch {

@@ -50,6 +50,11 @@ extension Config {
         var value: String
 
         func doRun(componentURL: URL) {
+            if global {
+                if !FileManager.default.fileExists(atPath: componentURL.absoluteString) {
+                    Component().write(to: componentURL)
+                }
+            }
             guard var component = Component.read(from: componentURL) else {
                 return
             }
